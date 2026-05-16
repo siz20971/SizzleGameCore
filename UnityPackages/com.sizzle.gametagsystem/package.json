@@ -3,12 +3,20 @@
   "displayName": "Sizzle GameTag System",
   "version": "0.1.0",
   "unity": "6000.3",
-  "keywords": [ ],
-  "category": "",
+  "description": "A lightweight hierarchical gameplay tag system for Unity with exact, descendant, timed-tag, and notify-based queries.",
+  "documentationUrl": "https://github.com/siz20971/SizzleGameCore/tree/main/UnityPackages/com.sizzle.gametagsystem",
+  "keywords": [
+    "gameplay",
+    "tag",
+    "hierarchy",
+    "state",
+    "ability"
+  ],
+  "category": "Gameplay",
   "samples": [
     {
       "displayName": "Demo Scene",
-      "description": "Demo Scene",
+      "description": "Sample scene for adding, removing, querying, and ticking GameTags in play mode.",
       "path": "Samples/DemoScene"
     }
   ],

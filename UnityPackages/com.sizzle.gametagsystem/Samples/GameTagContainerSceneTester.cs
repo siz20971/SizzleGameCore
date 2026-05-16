@@ -122,13 +122,13 @@ namespace Sizzle.GameTagSystem
 
             GameTag queryTag = CreateTagOrEmpty(m_queryTagName);
             bool hasExactTag = !queryTag.IsEmpty && m_container.HasExactTag(queryTag);
-            bool hasExactOrChildTag = !queryTag.IsEmpty && m_container.HasParentTag(queryTag);
-            bool hasChildOnlyTag = !queryTag.IsEmpty && m_container.HasChildTag(queryTag);
+            bool hasTagOrDescendant = !queryTag.IsEmpty && m_container.HasParentTag(queryTag);
+            bool hasStrictChildTag = !queryTag.IsEmpty && m_container.HasChildTag(queryTag);
 
             GUILayout.Space(6f);
             GUILayout.Label($"Has Exact Tag: {hasExactTag}");
-            GUILayout.Label($"Has Exact Or Child Tag: {hasExactOrChildTag}");
-            GUILayout.Label($"Has Child Only Tag: {hasChildOnlyTag}");
+            GUILayout.Label($"Has Tag Or Descendant: {hasTagOrDescendant}");
+            GUILayout.Label($"Has Strict Child Tag: {hasStrictChildTag}");
 
             GUILayout.Space(10f);
             GUILayout.BeginHorizontal();
@@ -292,8 +292,8 @@ namespace Sizzle.GameTagSystem
             {
                 sb.AppendLine($"Query: {queryTag.TagName}");
                 sb.AppendLine($"- Has Exact: {m_container.HasExactTag(queryTag)}");
-                sb.AppendLine($"- Has Exact Or Child: {m_container.HasParentTag(queryTag)}");
-                sb.AppendLine($"- Has Child Only: {m_container.HasChildTag(queryTag)}");
+                sb.AppendLine($"- Has Tag Or Descendant: {m_container.HasParentTag(queryTag)}");
+                sb.AppendLine($"- Has Strict Child Tag: {m_container.HasChildTag(queryTag)}");
             }
 
             GameTag actionTag = CreateTagOrEmpty(m_actionTagName);
