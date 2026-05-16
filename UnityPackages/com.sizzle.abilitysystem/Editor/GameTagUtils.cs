@@ -1,3 +1,4 @@
+using Sizzle.AbilitySystem.Editor;
 using Sizzle.GameTagSystem;
 using Sizzle.GameTagSystem.Editor;
 using System.Collections.Generic;
@@ -5,7 +6,6 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using UnityEditor;
 using UnityEngine;
-using Sizzle.AbilitySystem.Editor;
 
 namespace Sizzle.AbilitySystem
 {
@@ -28,7 +28,7 @@ namespace Sizzle.AbilitySystem
             HashSet<GameTag> allTagSet = new HashSet<GameTag>();
             
             string[] guids = AssetDatabase.FindAssets("t:AbilityBase");
-            foreach (var guid in guids)
+            foreach (string guid in guids)
             {
                 string path = AssetDatabase.GUIDToAssetPath(guid);
                 Ability ability = AssetDatabase.LoadAssetAtPath<Ability>(path);
@@ -73,7 +73,6 @@ namespace Sizzle.AbilitySystem
 
         private static List<string> GetPublicConstStringValuesFromFile(string filePath)
         {
-            // string pattern = @"public\s+const\s+string\s+(\w+)\s*=\s*""(.*?)"";"; // String 으로도 작성하게 될거같으면 이쪽도 사용하자.
             string pattern = @"public\s+static\s+readonly\s+GameTag\s+(\w+)\s*=\s*new\s+GameTag\(""([^""]+)""\);";
 
             bool fileExists = global::System.IO.File.Exists(filePath);
@@ -83,8 +82,8 @@ namespace Sizzle.AbilitySystem
                 return new List<string>();
             }
 
-            var matches = Regex.Matches(global::System.IO.File.ReadAllText(filePath), pattern);
-            var result = new Dictionary<string, string>();
+            MatchCollection matches = Regex.Matches(global::System.IO.File.ReadAllText(filePath), pattern);
+            Dictionary<string, string> result = new Dictionary<string, string>();
 
             foreach (Match match in matches)
             {
