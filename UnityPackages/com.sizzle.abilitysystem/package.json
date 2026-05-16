@@ -1,0 +1,22 @@
+{
+  "name": "com.sizzle.abilitysystem",
+  "displayName": "Sizzle Ability System",
+  "version": "0.1.0",
+  "unity": "6000.3",
+  "keywords": [],
+  "category": "",
+  "dependencies": {
+    "com.sizzle.gametagsystem": "0.1.0"
+  },
+  "samples": [
+    {
+      "displayName": "Demo Scene",
+      "description": "Demo Scene",
+      "path": "Samples/DemoScene"
+    }
+  ],
+  "author": {
+    "name": "Kyoungsoo Nam",
+    "url": "https://github.com/siz20971/SizzleGameCore"
+  }
+}
