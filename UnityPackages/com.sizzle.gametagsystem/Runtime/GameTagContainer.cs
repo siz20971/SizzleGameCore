@@ -5,9 +5,21 @@ using UnityEngine;
 
 namespace Sizzle.GameTagSystem
 {
+    /// <summary>
+    /// GameTagContainer의 소유/알림 이벤트를 수신하는 리스너 인터페이스입니다.
+    /// </summary>
     public interface IGameTagListener
     {
+        /// <summary>
+        /// 태그 소유 수량이 변했을 때 호출됩니다.
+        /// Added와 Remains를 함께 확인해 현재 상태를 해석합니다.
+        /// </summary>
         void OnGameTagOwnshipChanged(GameTagContainer.GameTagOwnshipChangeInfo info);
+
+        /// <summary>
+        /// 태그 알림 이벤트가 발생했을 때 호출됩니다.
+        /// 소유 여부와 무관한 단발성 notify 신호입니다.
+        /// </summary>
         void OnGameTagNotified(GameTag gameTag);
     }
 
@@ -32,11 +44,19 @@ namespace Sizzle.GameTagSystem
         /// </summary>
         private Dictionary<string, int> m_parentTagRefCounts = new Dictionary<string, int>();
 
+        /// <summary>
+        /// 현재 정확히 소유 중인 태그 목록을 반환합니다.
+        /// 부모 계층 태그는 자동으로 펼쳐 넣지 않고 직접 보유한 태그만 반환합니다.
+        /// </summary>
         public IList<GameTag> GetOwnTags()
         {
             return m_ownTagCounts.Keys.ToList();
         }
 
+        /// <summary>
+        /// 특정 태그를 정확히 몇 스택 보유 중인지 반환합니다.
+        /// 없으면 0을 반환합니다.
+        /// </summary>
         public int GetTagStack(GameTag tag)
         {
             return m_ownTagCounts.TryGetValue(tag, out int count) ? count : 0;
@@ -47,26 +67,38 @@ namespace Sizzle.GameTagSystem
 
         private List<IGameTagListener> m_gameTagListeners = new List<IGameTagListener>();
 
+        /// <summary>
+        /// 태그 변경/알림을 수신할 리스너를 등록합니다.
+        /// 중복 등록은 허용되므로 같은 인스턴스를 여러 번 넣으면 중복 호출됩니다.
+        /// </summary>
         public void AddListener(IGameTagListener listener)
         {
             m_gameTagListeners.Add(listener);
         }
 
+        /// <summary>
+        /// 등록된 리스너를 제거합니다.
+        /// 동일 리스너가 여러 번 등록된 경우 한 번 호출로 한 항목만 제거됩니다.
+        /// </summary>
         public void RemoveListener(IGameTagListener listener)
         {
             m_gameTagListeners.Remove(listener);
         }
 
+        /// <summary>
+        /// 태그를 1스택 추가합니다.
+        /// exact stack과 부모 계층 참조 카운트를 함께 증가시키고 소유 변경 이벤트를 발행합니다.
+        /// </summary>
         public void AddTag(GameTag tag)
         {
             if (tag.IsEmpty)
                 return;
 
             bool addedNewTag = m_ownTagCounts.TryAdd(tag, 1);
-            if (addedNewTag)
-                UpdateParentTagRefCounts(tag, +1);
-            else
+            if (!addedNewTag)
                 m_ownTagCounts[tag]++;
+
+            UpdateParentTagRefCounts(tag, +1);
 
             GameTagOwnshipChangeInfo info = new GameTagOwnshipChangeInfo()
             {
@@ -81,6 +113,10 @@ namespace Sizzle.GameTagSystem
                 listener.OnGameTagOwnshipChanged(info);
         }
 
+        /// <summary>
+        /// 태그를 1스택 제거합니다.
+        /// 마지막 스택이 제거되면 exact 소유 목록에서도 삭제하고 소유 변경 이벤트를 발행합니다.
+        /// </summary>
         public void RemoveTag(GameTag tag)
         {
             if (tag.IsEmpty || !m_ownTagCounts.ContainsKey(tag))
@@ -91,10 +127,11 @@ namespace Sizzle.GameTagSystem
             m_ownTagCounts[tag]--;
             int remains = m_ownTagCounts[tag];
 
+            UpdateParentTagRefCounts(tag, -1);
+
             if (remains <= 0)
             {
                 m_ownTagCounts.Remove(tag);
-                UpdateParentTagRefCounts(tag, -1);
                 remains = 0;
             }
 
@@ -112,7 +149,8 @@ namespace Sizzle.GameTagSystem
         }
 
         /// <summary>
-        /// 태그의 모든 부모 계층에 대해 레퍼런스 카운트를 업데이트합니다.
+        /// 태그의 모든 누적 경로에 대해 참조 카운트를 갱신합니다.
+        /// exact 태그 자신도 포함되므로 HasParentTag/HasChildTag 계산에 함께 사용됩니다.
         /// </summary>
         private void UpdateParentTagRefCounts(GameTag tag, int delta)
         {
@@ -136,6 +174,10 @@ namespace Sizzle.GameTagSystem
             }
         }
 
+        /// <summary>
+        /// 태그 알림 이벤트를 발행합니다.
+        /// 소유 상태는 변경하지 않고 notify 이벤트와 리스너 콜백만 호출합니다.
+        /// </summary>
         public void NotifyTag(GameTag tag)
         {
             if (tag.IsEmpty)
@@ -147,11 +189,19 @@ namespace Sizzle.GameTagSystem
                 listener.OnGameTagNotified(tag);
         }
 
+        /// <summary>
+        /// 해당 태그를 정확히 1스택 이상 보유 중인지 확인합니다.
+        /// 하위 태그 보유 여부는 고려하지 않습니다.
+        /// </summary>
         public bool HasExactTag(GameTag tag)
         {
             return !tag.IsEmpty && m_ownTagCounts.ContainsKey(tag);
         }
 
+        /// <summary>
+        /// 모든 태그를 정확히 보유 중인지 확인합니다.
+        /// 배열이 null이면 false를 반환합니다.
+        /// </summary>
         public bool HasExactTagsAll(GameTag[] tags)
         {
             if (tags == null)
@@ -160,21 +210,37 @@ namespace Sizzle.GameTagSystem
             return tags.All(tag => HasExactTag(tag));
         }
 
+        /// <summary>
+        /// 태그 배열 중 하나라도 정확히 보유 중인지 확인합니다.
+        /// 배열이 null이면 false를 반환합니다.
+        /// </summary>
         public bool HasExactTagsAny(GameTag[] tags)
         {
             return tags != null && tags.Any(tag => HasExactTag(tag));
         }
 
+        /// <summary>
+        /// 해당 태그 또는 그 하위 태그를 하나라도 보유 중인지 확인합니다.
+        /// 이름과 달리 부모를 찾는 함수가 아니라 exact 또는 descendant 존재 여부를 묻습니다.
+        /// </summary>
         public bool HasParentTag(GameTag tag)
         {
             return GetTagOrDescendantCount(tag) > 0;
         }
 
+        /// <summary>
+        /// 해당 태그의 엄격한 하위 태그를 하나라도 보유 중인지 확인합니다.
+        /// exact 태그만 있는 경우는 false를 반환합니다.
+        /// </summary>
         public bool HasChildTag(GameTag tag)
         {
             return GetTagOrDescendantCount(tag) > GetTagStack(tag);
         }
 
+        /// <summary>
+        /// 모든 태그에 대해 해당 태그 또는 그 하위 태그를 보유 중인지 확인합니다.
+        /// 배열이 null이면 false를 반환합니다.
+        /// </summary>
         public bool HasParentTagsAll(GameTag[] tags)
         {
             if (tags == null)
@@ -188,6 +254,10 @@ namespace Sizzle.GameTagSystem
             return true;
         }
 
+        /// <summary>
+        /// 태그 배열 중 하나라도 해당 태그 또는 그 하위 태그를 보유 중인지 확인합니다.
+        /// 배열이 null이면 false를 반환합니다.
+        /// </summary>
         public bool HasParentTagsAny(GameTag[] tags)
         {
             if (tags == null)
@@ -201,6 +271,10 @@ namespace Sizzle.GameTagSystem
             return false;
         }
 
+        /// <summary>
+        /// 모든 태그에 대해 엄격한 하위 태그를 하나 이상 보유 중인지 확인합니다.
+        /// exact 태그만 있는 경우는 false입니다.
+        /// </summary>
         public bool HasChildTagsAll(GameTag[] tags)
         {
             if (tags == null)
@@ -214,6 +288,10 @@ namespace Sizzle.GameTagSystem
             return true;
         }
 
+        /// <summary>
+        /// 태그 배열 중 하나라도 엄격한 하위 태그를 보유 중인지 확인합니다.
+        /// exact 태그만 있는 경우는 true로 취급하지 않습니다.
+        /// </summary>
         public bool HasChildTagsAny(GameTag[] tags)
         {
             if (tags == null)
@@ -322,6 +400,10 @@ namespace Sizzle.GameTagSystem
             }
         }
 
+        /// <summary>
+        /// 특정 태그 경로에 매핑된 exact + descendant 총 스택 수를 반환합니다.
+        /// exact 스택만 알고 싶다면 GetTagStack을 사용해야 합니다.
+        /// </summary>
         private int GetTagOrDescendantCount(GameTag tag)
         {
             if (tag.IsEmpty)
