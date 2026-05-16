@@ -1,0 +1,16 @@
+{
+    "name": "Sizzle.GameTagSystem.Editor",
+    "rootNamespace": "Sizzle.GameTagSystem.Editor",
+    "references": [
+        "GUID:b5912616b1ea825419bf999b67e6a5e9"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

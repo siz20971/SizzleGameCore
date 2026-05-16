@@ -1,0 +1,17 @@
+{
+    "name": "Sizzle.GameTagSystem.Samples",
+    "rootNamespace": "Sizzle.GameTagSystem.Samples",
+    "references": [
+        "GUID:b5912616b1ea825419bf999b67e6a5e9",
+        "GUID:005097cadbd2a2440b63ff25dfc02b2c"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

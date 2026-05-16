@@ -1,0 +1,23 @@
+{
+  "name": "com.sizzle.gametagsystem",
+  "displayName": "Sizzle GameTag System",
+  "version": "0.1.0",
+  "unity": "6000.3",
+  "keywords": [
+    "attribute",
+    "inspector",
+    "editor"
+  ],
+  "category": "editor extensions",
+  "samples": [
+    {
+      "displayName": "Demo Scene",
+      "description": "Demo Scene",
+      "path": "Samples/DemoScene"
+    }
+  ],
+  "author": {
+    "name": "Kyoungsoo Nam",
+    "url": "https://github.com/siz20971"
+  }
+}
