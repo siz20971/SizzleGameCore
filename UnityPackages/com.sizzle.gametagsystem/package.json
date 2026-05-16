@@ -3,12 +3,8 @@
   "displayName": "Sizzle GameTag System",
   "version": "0.1.0",
   "unity": "6000.3",
-  "keywords": [
-    "attribute",
-    "inspector",
-    "editor"
-  ],
-  "category": "editor extensions",
+  "keywords": [ ],
+  "category": "",
   "samples": [
     {
       "displayName": "Demo Scene",
