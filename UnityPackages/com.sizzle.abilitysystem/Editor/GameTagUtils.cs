@@ -27,7 +27,7 @@ namespace Sizzle.AbilitySystem
         {
             HashSet<GameTag> allTagSet = new HashSet<GameTag>();
             
-            string[] guids = AssetDatabase.FindAssets("t:AbilityBase");
+            string[] guids = AssetDatabase.FindAssets("t:Ability");
             foreach (string guid in guids)
             {
                 string path = AssetDatabase.GUIDToAssetPath(guid);
