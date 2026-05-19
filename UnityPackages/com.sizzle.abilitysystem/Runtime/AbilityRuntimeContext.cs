@@ -54,7 +54,14 @@ namespace Sizzle.AbilitySystem
         {
             IsActive = true;
             ActivatedTime = Time.time;
+            OnActivated();   // ← 추가: 최초 Activate에서도 훅 호출
         }
+
+        /// <summary>
+        /// 어빌리티가 활성화될 때(최초 Activate 및 Reactivate 모두) 호출됩니다.
+        /// 재진입 가능하도록 멱등(idempotent)하게 작성되어야 합니다.
+        /// </summary>
+        protected virtual void OnActivated() { }
 
         /// <summary>
         /// ReactivationPolicy.Reactivate 정책으로 재실행될 때 호출됩니다.
@@ -65,10 +72,15 @@ namespace Sizzle.AbilitySystem
             ElapsedTime = 0f;
             ActivatedTime = Time.time;
             PendingEndReason = AbilityEndReason.None;
-            OnProcessActivate();
+            OnActivated();   // ← OnProcessActivate → OnActivated 로 통합
+            OnReactivated(); // ← 추가: Reactivate 전용 훅
         }
 
-        protected virtual void OnProcessActivate() { }
+        /// <summary>
+        /// Reactivate 정책으로 재실행될 때만 추가 호출됩니다.
+        /// 일반 Activate 경로에서는 호출되지 않습니다.
+        /// </summary>
+        protected virtual void OnReactivated() { }
 
         // 어빌리티가 매 프레임 업데이트될때 호출됨
         internal void ProcessUpdate(float deltaTime)
