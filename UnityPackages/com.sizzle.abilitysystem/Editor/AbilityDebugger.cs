@@ -1,4 +1,5 @@
 using Sizzle.GameTagSystem;
+using Sizzle.GameTagSystem.Editor;
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
@@ -158,6 +159,7 @@ namespace Sizzle.AbilitySystem.Editor
         private void DrawAbilityRow(AbilityRuntimeContext ctx)
         {
             bool active = ctx.IsActive;
+            Ability ability = ctx.Ability;
 
             Color prevBg = GUI.backgroundColor;
             GUI.backgroundColor = active ? new Color(0.2f, 0.55f, 0.2f) : new Color(0.22f, 0.22f, 0.22f);
@@ -165,17 +167,23 @@ namespace Sizzle.AbilitySystem.Editor
             GUI.backgroundColor = prevBg;
 
             GUILayout.Label(active ? "●" : "○", active ? m_activeStyle : m_inactiveStyle, GUILayout.Width(14));
-            EditorGUILayout.LabelField(ctx.Ability.name, active ? m_activeStyle : m_inactiveStyle, GUILayout.MinWidth(80));
+            EditorGUILayout.LabelField(ability.name, active ? m_activeStyle : m_inactiveStyle, GUILayout.MinWidth(80));
             GUILayout.FlexibleSpace();
 
-            string tagName = ctx.Ability.MainTag.TagName;
+            string tagName = ability.MainTag.TagName;
             if (!string.IsNullOrEmpty(tagName))
                 GUILayout.Label(tagName, EditorStyles.miniLabel, GUILayout.MaxWidth(180));
 
+            if (GUILayout.Button("Select", EditorStyles.miniButtonLeft, GUILayout.Width(48)))
+                SelectAbilityAsset(ability);
+
+            if (GUILayout.Button("Props", EditorStyles.miniButtonMid, GUILayout.Width(48)))
+                OpenAbilityProperties(ability);
+
             using (new EditorGUI.DisabledScope(!Application.isPlaying))
             {
-                if (GUILayout.Button("Activate", EditorStyles.miniButton, GUILayout.Width(56)))
-                    m_selectedProcessor.TryActivateAbility(ctx.Ability.MainTag);
+                if (GUILayout.Button("Activate", EditorStyles.miniButtonRight, GUILayout.Width(56)))
+                    m_selectedProcessor.TryActivateAbility(ability.MainTag);
             }
 
             EditorGUILayout.EndHorizontal();
@@ -190,6 +198,10 @@ namespace Sizzle.AbilitySystem.Editor
             EditorGUILayout.BeginHorizontal();
             EditorGUILayout.LabelField("Tag", GUILayout.Width(32));
             m_tagInput = EditorGUILayout.TextField(m_tagInput);
+            if (GUILayout.Button("Pick", EditorStyles.miniButtonLeft, GUILayout.Width(42)))
+                ShowCachedTagMenu(m_tagInput);
+            if (GUILayout.Button(EditorGUIUtility.IconContent("d_Refresh"), EditorStyles.miniButtonRight, GUILayout.Width(24)))
+                RefreshCachedTagMenu();
             EditorGUILayout.EndHorizontal();
 
             GUILayout.Space(2);
@@ -264,6 +276,95 @@ namespace Sizzle.AbilitySystem.Editor
         {
             Rect r = EditorGUILayout.GetControlRect(false, 1f);
             EditorGUI.DrawRect(r, new Color(0.5f, 0.5f, 0.5f, 0.4f));
+        }
+
+        private static void SelectAbilityAsset(Ability ability)
+        {
+            if (!ability)
+                return;
+
+            Selection.activeObject = ability;
+            EditorGUIUtility.PingObject(ability);
+            EditorUtility.FocusProjectWindow();
+        }
+
+        private static void OpenAbilityProperties(Ability ability)
+        {
+            if (!ability)
+                return;
+
+            SelectAbilityAsset(ability);
+            EditorUtility.OpenPropertyEditor(ability);
+        }
+
+        private void RefreshCachedTagMenu()
+        {
+            GameTagUtils.CacheGameTagsInAbilityAssets();
+        }
+
+        private void ShowCachedTagMenu(string filterText)
+        {
+            IList<GameTag> allTags = GameTagCache.GetCachedGameTags();
+            GenericMenu menu = new GenericMenu();
+
+            menu.AddItem(new GUIContent("Manual/Input"), false, () =>
+            {
+                GUI.FocusControl(null);
+            });
+
+            if (allTags == null || allTags.Count == 0)
+            {
+                menu.AddDisabledItem(new GUIContent("Cached Tags/No cached tags"));
+                menu.ShowAsContext();
+                return;
+            }
+
+            List<GameTag> childTags = new List<GameTag>();
+            List<GameTag> containsTags = new List<GameTag>();
+
+            foreach (GameTag tag in allTags)
+            {
+                if (string.IsNullOrEmpty(filterText))
+                {
+                    containsTags.Add(tag);
+                    continue;
+                }
+
+                if (tag.ChildOfOrExact(filterText))
+                    childTags.Add(tag);
+                else if (tag.TagName.Contains(filterText))
+                    containsTags.Add(tag);
+            }
+
+            if (childTags.Count > 0)
+            {
+                foreach (GameTag tag in childTags)
+                    AddCachedTagMenuItem(menu, tag);
+            }
+
+            if (containsTags.Count > 0)
+            {
+                if (childTags.Count > 0)
+                    menu.AddSeparator("Cached Tags/");
+
+                foreach (GameTag tag in containsTags)
+                    AddCachedTagMenuItem(menu, tag);
+            }
+
+            if (childTags.Count == 0 && containsTags.Count == 0)
+                menu.AddDisabledItem(new GUIContent("Cached Tags/No matching tags"));
+
+            menu.ShowAsContext();
+        }
+
+        private void AddCachedTagMenuItem(GenericMenu menu, GameTag tag)
+        {
+            string tagName = tag.TagName;
+            menu.AddItem(new GUIContent($"Cached Tags/{tagName}"), m_tagInput == tagName, () =>
+            {
+                m_tagInput = tagName;
+                Repaint();
+            });
         }
 
         private void RefreshAbilityProcessors()
