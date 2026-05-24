@@ -122,16 +122,19 @@ namespace Sizzle.AbilitySystem.Editor
         {
             InitStyles();
 
+            // 상단 툴바에서 오른쪽 패널을 실시간 디버깅 화면과 히스토리 화면으로 전환합니다.
             DrawTopTabs();
 
             float contentY = PAD + TAB_HEIGHT + PAD;
             float contentHeight = position.height - contentY - PAD;
 
+            // 왼쪽 패널은 씬에 있는 AbilityProcessor 선택과 오브젝트 바로가기 버튼을 출력합니다.
             GUILayout.BeginArea(new Rect(PAD, contentY, LIST_WIDTH - PAD, contentHeight), EditorStyles.helpBox);
             DrawProcessorListPanel();
             GUILayout.EndArea();
 
             float rightX = LIST_WIDTH + PAD;
+            // 오른쪽 패널은 현재 선택된 프로세서 기준의 디버그 정보를 출력합니다.
             GUILayout.BeginArea(new Rect(rightX, contentY, position.width - rightX - PAD, contentHeight), EditorStyles.helpBox);
             DrawDetailPanel();
             GUILayout.EndArea();
@@ -139,6 +142,7 @@ namespace Sizzle.AbilitySystem.Editor
 
         private void DrawTopTabs()
         {
+            // 오른쪽 영역에서 사용할 메인 모드 탭을 출력합니다.
             Rect tabsRect = new Rect(PAD, PAD, position.width - PAD * 2, TAB_HEIGHT);
             m_selectedTab = (DebuggerTab)GUI.Toolbar(tabsRect, (int)m_selectedTab, new[] { "Debugger", "History" });
         }
@@ -147,6 +151,7 @@ namespace Sizzle.AbilitySystem.Editor
 
         private void DrawProcessorListPanel()
         {
+            // 씬의 모든 AbilityProcessor를 나열하고 각 행마다 Pick/Ping 보조 버튼을 제공합니다.
             if (GUILayout.Button(EditorGUIUtility.IconContent("d_Refresh"), GUILayout.Height(22)))
                 RefreshAbilityProcessors();
 
@@ -193,35 +198,43 @@ namespace Sizzle.AbilitySystem.Editor
 
             if (m_selectedTab == DebuggerTab.History)
             {
+                // History 탭에서는 선택된 프로세서의 이벤트 히스토리 전용 화면을 출력합니다.
                 DrawHistoryTabPanel();
                 return;
             }
 
             GUILayout.Space(4);
+            // 어빌리티 목록과 개별 액션 버튼, 선택 상태를 출력합니다.
             DrawSectionHeader("Abilities");
             DrawAbilitiesSection();
 
             GUILayout.Space(6);
+            // 플레이 모드에서 선택된 프로세서 상태를 직접 바꾸는 제어 버튼을 출력합니다.
             DrawSectionHeader("Controls");
             DrawControlsSection();
 
             GUILayout.Space(6);
+            // 현재 활성 어빌리티들의 실시간 런타임 상태를 출력합니다.
             DrawSectionHeader("Active Details");
             DrawActiveAbilityDetailsSection();
 
             GUILayout.Space(6);
+            // 선택했거나 마지막으로 다룬 어빌리티의 차단 원인 분석 정보를 출력합니다.
             DrawSectionHeader("Blocker Analysis");
             DrawBlockerAnalysisSection();
 
             GUILayout.Space(6);
+            // 가장 최근의 활성화 시도와 그 결과 요약을 출력합니다.
             DrawSectionHeader("Last Activation");
             DrawLastActivationSection();
 
             GUILayout.Space(6);
+            // 플레이 모드에서 태그 상태를 수동으로 바꾸기 위한 테스트 도구를 출력합니다.
             DrawSectionHeader("Tag Operations");
             DrawTagOperationsSection();
 
             GUILayout.Space(6);
+            // 현재 정확히 보유 중인 태그와 timed tag 남은 시간 정보를 출력합니다.
             DrawSectionHeader("Own Tags");
             DrawOwnTagsSection();
         }
@@ -230,6 +243,7 @@ namespace Sizzle.AbilitySystem.Editor
 
         private void DrawAbilitiesSection()
         {
+            // 등록된 어빌리티 목록과 이름/태그 필터 UI를 출력합니다.
             IList<AbilityRuntimeContext> contexts = m_selectedProcessor.GetAllAbilityContexts();
 
             EditorGUILayout.BeginHorizontal();
@@ -263,6 +277,7 @@ namespace Sizzle.AbilitySystem.Editor
 
         private void DrawAbilityRow(AbilityRuntimeContext ctx)
         {
+            // 한 행은 하나의 등록된 어빌리티와 그에 대한 직접 디버그 액션을 나타냅니다.
             bool active = ctx.IsActive;
             Ability ability = ctx.Ability;
 
@@ -303,6 +318,7 @@ namespace Sizzle.AbilitySystem.Editor
 
         private void DrawControlsSection()
         {
+            // 선택된 프로세서에 대한 큰 단위의 상태 제어 버튼을 출력합니다.
             using (new EditorGUI.DisabledScope(!Application.isPlaying))
             {
                 EditorGUILayout.BeginHorizontal();
@@ -323,6 +339,7 @@ namespace Sizzle.AbilitySystem.Editor
 
         private void DrawTagOperationsSection()
         {
+            // 태그 입력, 캐시 기반 태그 선택, 수동 태그/활성화 명령 UI를 출력합니다.
             GUILayout.Space(2);
 
             EditorGUILayout.BeginHorizontal();
@@ -370,6 +387,7 @@ namespace Sizzle.AbilitySystem.Editor
 
         private void DrawOwnTagsSection()
         {
+            // 프로세서가 정확히 보유 중인 태그와 timed tag 카운트다운 정보를 출력합니다.
             IList<GameTag> ownTags = m_selectedProcessor.TagContainer.GetOwnTags();
             IList<GameTagContainer.TimedTagInfo> timedTags = m_selectedProcessor.TagContainer.GetTimedTags();
 
@@ -402,6 +420,7 @@ namespace Sizzle.AbilitySystem.Editor
 
         private void DrawLastActivationSection()
         {
+            // 가장 최근 활성화 요청의 출처, 결과, 사람이 읽기 쉬운 진단 내용을 출력합니다.
             if (string.IsNullOrEmpty(m_lastActivationSource))
             {
                 EditorGUILayout.LabelField("  아직 활성화 시도 기록이 없습니다.", EditorStyles.miniLabel);
@@ -417,6 +436,7 @@ namespace Sizzle.AbilitySystem.Editor
 
         private void DrawHistorySection()
         {
+            // 히스토리 리스트 뷰 안에 필터링된 이벤트 행들을 출력합니다.
             if (m_eventHistory.Count == 0)
             {
                 EditorGUILayout.LabelField("  아직 기록된 이벤트가 없습니다.", EditorStyles.miniLabel);
@@ -441,6 +461,7 @@ namespace Sizzle.AbilitySystem.Editor
 
         private void DrawHistoryTabPanel()
         {
+            // 히스토리 전용 필터와 오른쪽 이벤트 리스트 뷰를 출력합니다.
             GUILayout.Space(4);
             m_historyOptionsExpanded = EditorGUILayout.BeginFoldoutHeaderGroup(m_historyOptionsExpanded, "History Options");
             if (m_historyOptionsExpanded)
@@ -468,6 +489,7 @@ namespace Sizzle.AbilitySystem.Editor
 
         private void DrawActiveAbilityDetailsSection()
         {
+            // 현재 활성 상태인 모든 어빌리티의 확장 런타임 필드를 출력합니다.
             IList<AbilityRuntimeContext> contexts = m_selectedProcessor.GetAllAbilityContexts();
             List<AbilityRuntimeContext> activeContexts = new List<AbilityRuntimeContext>();
 
@@ -493,6 +515,7 @@ namespace Sizzle.AbilitySystem.Editor
 
         private void DrawActiveAbilityDetail(AbilityRuntimeContext context)
         {
+            // 활성 어빌리티 하나의 라이프사이클 상태와 태그 규칙 스냅샷을 출력합니다.
             Ability ability = context.Ability;
             AbilityGameTagSet tagSet = ability.TagSet;
 
@@ -514,6 +537,7 @@ namespace Sizzle.AbilitySystem.Editor
 
         private void DrawBlockerAnalysisSection()
         {
+            // 현재 프로세서 상태에서 선택한 어빌리티가 왜 활성화되거나 차단되는지 출력합니다.
             AbilityRuntimeContext context = ResolveAnalysisContext();
             if (context?.Ability == null)
             {
@@ -532,6 +556,7 @@ namespace Sizzle.AbilitySystem.Editor
 
         private void DrawHistoryEntry(DebuggerEventEntry entry)
         {
+            // 히스토리 리스트 뷰의 색상 구분된 이벤트 한 줄을 출력합니다.
             Rect rowRect = EditorGUILayout.GetControlRect(false, EditorGUIUtility.singleLineHeight + 6f);
             EditorGUI.DrawRect(rowRect, GetHistoryEntryBackground(entry.Category));
 

@@ -12,7 +12,7 @@
       "depth": 0,
       "source": "local",
       "dependencies": {
-        "com.sizzle.gametagsystem": "0.1.0"
+        "com.sizzle.gametagsystem": "0.1.1"
       }
     },
     "com.sizzle.gametagsystem": {

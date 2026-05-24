@@ -43,6 +43,10 @@ namespace Sizzle.AbilitySystem
             TagContainer.OnTagNotified += OnTagNotified;
         }
 
+        /// <summary>
+        /// 인스펙터에 지정된 기본 어빌리티들을 이 프로세서에 등록합니다.
+        /// 중복 호출 시 동일 어빌리티가 다시 등록될 수 있으므로 초기화 시점을 호출 측에서 관리해야 합니다.
+        /// </summary>
         public void Initialize()
         {
             foreach (Ability ability in m_defaultAbilities)
@@ -52,8 +56,15 @@ namespace Sizzle.AbilitySystem
         /// <summary> AbilityProcessor에 초기화 시점에 등록될 어빌리티 애셋 리스트를 반환합니다. 반환된 리스트는 읽기 전용입니다. </summary>
         public IList<Ability> GetDefaultAbilities() => m_defaultAbilities.AsReadOnly();
 
+        /// <summary>
+        /// 현재 이 프로세서에 등록된 모든 어빌리티 런타임 컨텍스트를 읽기 전용으로 반환합니다.
+        /// </summary>
         public IList<AbilityRuntimeContext> GetAllAbilityContexts() => m_totalContexts.AsReadOnly();
 
+        /// <summary>
+        /// 지정한 MainTag에 대응되는 어빌리티 런타임 컨텍스트를 반환합니다.
+        /// 없거나 빈 태그인 경우 null을 반환합니다.
+        /// </summary>
         public AbilityRuntimeContext GetAbilityContext(GameTag mainTag)
         {
             if (mainTag.IsEmpty)
@@ -63,6 +74,13 @@ namespace Sizzle.AbilitySystem
             return context;
         }
 
+        /// <summary>
+        /// 어빌리티를 초기화하고 이 프로세서에 등록합니다.
+        /// 등록에 성공하면 생성된 컨텍스트와 함께 등록 이벤트를 발행합니다.
+        /// </summary>
+        /// <param name="ability">등록할 어빌리티 애셋</param>
+        /// <param name="onRegistered">등록 성공 직후 호출할 콜백</param>
+        /// <returns>등록 성공 시 입력 어빌리티를, 실패 시 null을 반환합니다.</returns>
         public Ability RegistAbility(Ability ability, Action<Ability> onRegistered)
         {
             if (!ability)
@@ -110,6 +128,12 @@ namespace Sizzle.AbilitySystem
             return ability;
         }
 
+        /// <summary>
+        /// MainTag를 기준으로 등록된 어빌리티를 해제합니다.
+        /// 활성 상태였다면 종료 처리까지 함께 수행합니다.
+        /// </summary>
+        /// <param name="tag">해제할 어빌리티의 MainTag</param>
+        /// <returns>해제에 성공하면 true를 반환합니다.</returns>
         public bool UnregistAbility(GameTag tag)
         {
             if (tag.IsEmpty)
@@ -134,6 +158,10 @@ namespace Sizzle.AbilitySystem
             return TryActivateAbilityImplement(targetContext, payload);
         }
 
+        /// <summary>
+        /// 현재 활성 상태인 모든 어빌리티를 취소 사유로 종료시킵니다.
+        /// 종료 시 부여 중이던 ActivationOwnedTags도 함께 제거합니다.
+        /// </summary>
         public void CancelAllAbilities()
         {
             foreach (AbilityRuntimeContext context in m_activeContexts)
@@ -165,6 +193,9 @@ namespace Sizzle.AbilitySystem
             OnUpdate();
         }
 
+        /// <summary>
+        /// 내부 어빌리티 UpdateTick 처리 이후 추가 로직을 확장하기 위한 훅입니다.
+        /// </summary>
         protected virtual void OnUpdate() { }
 
         private void FixedUpdate()
@@ -182,6 +213,9 @@ namespace Sizzle.AbilitySystem
             OnFixedUpdate();
         }
 
+        /// <summary>
+        /// 내부 어빌리티 FixedUpdateTick 처리 이후 추가 로직을 확장하기 위한 훅입니다.
+        /// </summary>
         protected virtual void OnFixedUpdate() { }
 
         private void LateUpdate()
@@ -200,6 +234,9 @@ namespace Sizzle.AbilitySystem
             CleanUpInactiveAbilities();
         }
 
+        /// <summary>
+        /// 내부 어빌리티 LateUpdateTick 처리 이후 추가 로직을 확장하기 위한 훅입니다.
+        /// </summary>
         protected virtual void OnLateUpdate() { }
 
         private void CleanUpInactiveAbilities()
@@ -234,6 +271,9 @@ namespace Sizzle.AbilitySystem
         #endregion
 
         #region Public Methods
+        /// <summary>
+        /// 지정한 MainTag의 어빌리티가 현재 활성 상태인지 반환합니다.
+        /// </summary>
         public bool IsActive(GameTag mainTag)
         {
             if (!m_activatableContexts.TryGetValue(mainTag, out AbilityRuntimeContext context))
@@ -241,7 +281,14 @@ namespace Sizzle.AbilitySystem
             return context.IsActive;
         }
 
+        /// <summary>
+        /// 지정한 태그를 MainTag로 사용하는 활성화 가능 어빌리티가 등록되어 있는지 반환합니다.
+        /// </summary>
         public bool HasActivatableAbility(GameTag gameTag) => m_activatableContexts.ContainsKey(gameTag);
+
+        /// <summary>
+        /// 지정한 태그를 TriggerTag로 사용하는 트리거형 어빌리티가 등록되어 있는지 반환합니다.
+        /// </summary>
         public bool HasTriggableAbility(GameTag gameTag) => m_triggerableContexts.ContainsKey(gameTag);
         #endregion
 
@@ -364,6 +411,9 @@ namespace Sizzle.AbilitySystem
         }
         #endregion
 
+        /// <summary>
+        /// 프로세서가 파괴될 때 등록된 어빌리티와 이벤트 구독을 정리합니다.
+        /// </summary>
         protected virtual void OnDestroy()
         {
             TagContainer.OnTagNotified -= OnTagNotified;

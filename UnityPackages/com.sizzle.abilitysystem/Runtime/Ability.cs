@@ -13,7 +13,14 @@ namespace Sizzle.AbilitySystem
         public AbilityGameTagSet TagSet => m_tagSet;
         public AbilityReactivationPolicy ReactivationPolicy => m_reactivationPolicy;
 
+        /// <summary>
+        /// 이 어빌리티의 MainTag가 지정한 문자열 태그의 자식 계열인지 반환합니다.
+        /// </summary>
         public bool IsChildTag(string tag) => MainTag.ChildOf(tag);
+
+        /// <summary>
+        /// 이 어빌리티의 MainTag가 지정한 태그의 자식 계열인지 반환합니다.
+        /// </summary>
         public bool IsChildTag(GameTag tag) => MainTag.ChildOf(tag);
 
         /// <summary>
@@ -36,6 +43,9 @@ namespace Sizzle.AbilitySystem
             return CreateContextInternal();
         }
 
+        /// <summary>
+        /// 이 어빌리티에 대응되는 런타임 컨텍스트 인스턴스를 생성합니다.
+        /// </summary>
         protected abstract AbilityRuntimeContext CreateContextInternal();
 
         /// <summary>
@@ -96,6 +106,9 @@ namespace Sizzle.AbilitySystem
         }
 
         #region Ability Lifecycle Abstract Methods
+        /// <summary>
+        /// 어빌리티가 최초 활성화될 때 실행할 로직을 구현합니다.
+        /// </summary>
         protected abstract void OnActivate(AbilityRuntimeContext context, AbilityActivatePayload payload);
 
         /// <summary>
@@ -112,10 +125,24 @@ namespace Sizzle.AbilitySystem
         /// </summary>
         protected virtual void OnReactivateBlocked(AbilityRuntimeContext context, AbilityActivatePayload payload) { }
 
+        /// <summary>
+        /// 어빌리티가 활성 상태인 동안 매 프레임 호출되는 업데이트 훅입니다.
+        /// </summary>
         protected virtual void OnUpdateTick(float deltaTime, AbilityRuntimeContext context) { }
+
+        /// <summary>
+        /// 어빌리티가 활성 상태인 동안 물리 프레임마다 호출되는 업데이트 훅입니다.
+        /// </summary>
         protected virtual void OnFixedUpdateTick(float deltaTime, AbilityRuntimeContext context) { }
+
+        /// <summary>
+        /// 어빌리티가 활성 상태인 동안 LateUpdate 시점에 호출되는 훅입니다.
+        /// </summary>
         protected virtual void OnLateUpdateTick(float deltaTime, AbilityRuntimeContext context) { }
 
+        /// <summary>
+        /// 어빌리티가 종료될 때 정리 로직을 구현합니다.
+        /// </summary>
         protected abstract void OnDeactivate(AbilityEndReason endReason, AbilityRuntimeContext context);
         #endregion
     }
@@ -130,6 +157,9 @@ namespace Sizzle.AbilitySystem
     public abstract class Ability<TContext> : Ability
             where TContext : AbilityRuntimeContext, new()
     {
+        /// <summary>
+        /// 이 Ability 타입에 맞는 구체 컨텍스트를 생성합니다.
+        /// </summary>
         protected sealed override AbilityRuntimeContext CreateContextInternal()
         {
             TContext context = new TContext();
@@ -141,6 +171,10 @@ namespace Sizzle.AbilitySystem
             return CanActivate(context as TContext, payload);
         }
 
+        /// <summary>
+        /// 타입이 확정된 컨텍스트 기준으로 활성화 가능 여부를 검사합니다.
+        /// 기본 구현은 항상 true를 반환합니다.
+        /// </summary>
         protected virtual bool CanActivate(TContext context, AbilityActivatePayload payload)
         {
             return true;
@@ -181,6 +215,9 @@ namespace Sizzle.AbilitySystem
             OnUpdateTick(deltaTime, context as TContext);
         }
 
+        /// <summary>
+        /// 타입이 확정된 컨텍스트 기준으로 최초 활성화 로직을 구현합니다.
+        /// </summary>
         protected abstract void OnActivate(TContext context, AbilityActivatePayload payload);
 
         /// <summary>
@@ -196,9 +233,24 @@ namespace Sizzle.AbilitySystem
         /// </summary>
         protected virtual void OnReactivateBlocked(TContext context, AbilityActivatePayload payload) { }
 
+        /// <summary>
+        /// 타입이 확정된 컨텍스트 기준으로 물리 프레임 업데이트 로직을 구현합니다.
+        /// </summary>
         protected virtual void OnFixedUpdateTick(float deltaTime, TContext context) { }
+
+        /// <summary>
+        /// 타입이 확정된 컨텍스트 기준으로 LateUpdate 로직을 구현합니다.
+        /// </summary>
         protected virtual void OnLateUpdateTick(float deltaTime, TContext context) { }
+
+        /// <summary>
+        /// 타입이 확정된 컨텍스트 기준으로 일반 프레임 업데이트 로직을 구현합니다.
+        /// </summary>
         protected virtual void OnUpdateTick(float deltaTime, TContext context) { }
+
+        /// <summary>
+        /// 타입이 확정된 컨텍스트 기준으로 종료 시 정리 로직을 구현합니다.
+        /// </summary>
         protected abstract void OnDeactivate(AbilityEndReason endReason, TContext context);
 
     }
@@ -215,6 +267,9 @@ namespace Sizzle.AbilitySystem
             OnActivate(context, payload as TActivatePayload);
         }
 
+        /// <summary>
+        /// 타입이 확정된 컨텍스트와 페이로드 기준으로 최초 활성화 로직을 구현합니다.
+        /// </summary>
         protected abstract void OnActivate(TContext context, TActivatePayload payload);
 
         protected sealed override void OnReactivate(TContext context, AbilityActivatePayload payload)
@@ -222,6 +277,10 @@ namespace Sizzle.AbilitySystem
             OnReactivate(context, payload as TActivatePayload);
         }
 
+        /// <summary>
+        /// 타입이 확정된 컨텍스트와 페이로드 기준으로 Reactivate 로직을 구현합니다.
+        /// 기본 구현은 OnActivate를 재사용합니다.
+        /// </summary>
         protected virtual void OnReactivate(TContext context, TActivatePayload payload)
         {
             OnActivate(context, payload);
