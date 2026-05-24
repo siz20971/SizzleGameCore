@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 059bfed4508c07843b89808221e05867, type: 3}
+  m_Name: Ability_Demo_Log
+  m_EditorClassIdentifier: Sizzle.AbilitySystem.Samples::Sizzle.AbilitySystem.Demo.DemoFlashAbility
+  m_tagSet:
+    m_mainTag:
+      m_tagName: Demo.Log
+    m_cancelAbilitiesWithTag: []
+    m_blockAbilitiesWithTag: []
+    m_activationOwnedTags: []
+    m_activationRequiredTags: []
+    m_activationBlockedTags: []
+    m_triggerTag:
+      m_tagName: 
+  m_reactivationPolicy: 0
+  m_activateMessage: Demo ability activated
+  m_deactivateMessage: Demo ability finished
+  m_duration: 0.4
+  m_includeProcessorName: 1

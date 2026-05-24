@@ -1,0 +1,52 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 685c9af6f66af594fb8ecb96cee58188, type: 3}
+  m_Name: Ability_Demo_Move
+  m_EditorClassIdentifier: Sizzle.AbilitySystem.Samples::Sizzle.AbilitySystem.Demo.DemoFlashAbility
+  m_tagSet:
+    m_mainTag:
+      m_tagName: Demo.Move
+    m_cancelAbilitiesWithTag: []
+    m_blockAbilitiesWithTag: []
+    m_activationOwnedTags: []
+    m_activationRequiredTags: []
+    m_activationBlockedTags: []
+    m_triggerTag:
+      m_tagName: 
+  m_reactivationPolicy: 0
+  m_localOffset: {x: 0, y: 1.5, z: 0}
+  m_duration: 0.4
+  m_restorePositionOnEnd: 1
+  m_motionCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
