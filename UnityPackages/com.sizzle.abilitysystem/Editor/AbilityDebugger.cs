@@ -22,6 +22,11 @@ namespace Sizzle.AbilitySystem.Editor
         private Vector2 m_processorScrollPos;
         private Vector2 m_abilityScrollPos;
         private Vector2 m_tagScrollPos;
+        private string m_lastActivationSource = "";
+        private string m_lastActivationTagName = "";
+        private string m_lastActivationAbilityName = "";
+        private string m_lastActivationDetail = "";
+        private AbilityActivateResult m_lastActivationResult = AbilityActivateResult.None;
 
         // ── Styles ────────────────────────────────────────────────────
         private GUIStyle m_selectedButtonStyle;
@@ -127,6 +132,10 @@ namespace Sizzle.AbilitySystem.Editor
             DrawAbilitiesSection();
 
             GUILayout.Space(6);
+            DrawSectionHeader("Last Activation");
+            DrawLastActivationSection();
+
+            GUILayout.Space(6);
             DrawSectionHeader("Tag Operations");
             DrawTagOperationsSection();
 
@@ -183,7 +192,7 @@ namespace Sizzle.AbilitySystem.Editor
             using (new EditorGUI.DisabledScope(!Application.isPlaying))
             {
                 if (GUILayout.Button("Activate", EditorStyles.miniButtonRight, GUILayout.Width(56)))
-                    m_selectedProcessor.TryActivateAbility(ability.MainTag);
+                    TryActivateAndRecord(ability.MainTag, ability, "Ability Row");
             }
 
             EditorGUILayout.EndHorizontal();
@@ -217,7 +226,7 @@ namespace Sizzle.AbilitySystem.Editor
                 if (GUILayout.Button("Notify", EditorStyles.miniButton))
                     m_selectedProcessor.TagContainer.NotifyTag(new GameTag(m_tagInput));
                 if (GUILayout.Button("Activate", EditorStyles.miniButton))
-                    m_selectedProcessor.TryActivateAbility(new GameTag(m_tagInput));
+                    TryActivateAndRecord(new GameTag(m_tagInput), null, "Tag Operations");
                 EditorGUILayout.EndHorizontal();
 
                 EditorGUILayout.BeginHorizontal();
@@ -263,6 +272,21 @@ namespace Sizzle.AbilitySystem.Editor
             EditorGUILayout.EndScrollView();
         }
 
+        private void DrawLastActivationSection()
+        {
+            if (string.IsNullOrEmpty(m_lastActivationSource))
+            {
+                EditorGUILayout.LabelField("  아직 활성화 시도 기록이 없습니다.", EditorStyles.miniLabel);
+                return;
+            }
+
+            EditorGUILayout.LabelField($"Source: {m_lastActivationSource}", EditorStyles.miniLabel);
+            EditorGUILayout.LabelField($"Result: {m_lastActivationResult}", EditorStyles.miniLabel);
+            EditorGUILayout.LabelField($"Tag: {m_lastActivationTagName}", EditorStyles.miniLabel);
+            EditorGUILayout.LabelField($"Ability: {m_lastActivationAbilityName}", EditorStyles.miniLabel);
+            EditorGUILayout.HelpBox(m_lastActivationDetail, GetActivationResultMessageType(m_lastActivationResult));
+        }
+
         // ── Utilities ─────────────────────────────────────────────────
 
         private void DrawSectionHeader(string title)
@@ -295,6 +319,139 @@ namespace Sizzle.AbilitySystem.Editor
 
             SelectAbilityAsset(ability);
             EditorUtility.OpenPropertyEditor(ability);
+        }
+
+        private void TryActivateAndRecord(GameTag tag, Ability ability, string source)
+        {
+            AbilityRuntimeContext context = m_selectedProcessor.GetAbilityContext(tag);
+            Ability targetAbility = ability != null ? ability : context?.Ability;
+            AbilityActivateResult result = m_selectedProcessor.TryActivateAbility(tag);
+
+            m_lastActivationSource = source;
+            m_lastActivationTagName = string.IsNullOrEmpty(tag.TagName) ? "(empty)" : tag.TagName;
+            m_lastActivationAbilityName = targetAbility != null ? targetAbility.name : "(not found)";
+            m_lastActivationResult = result;
+            m_lastActivationDetail = BuildActivationDetail(tag, targetAbility, result, context?.IsActive ?? false);
+            Repaint();
+        }
+
+        private string BuildActivationDetail(GameTag tag, Ability ability, AbilityActivateResult result, bool wasAlreadyActive)
+        {
+            switch (result)
+            {
+                case AbilityActivateResult.Success:
+                    return ability != null
+                        ? $"{ability.name} activation succeeded for tag '{tag.TagName}'."
+                        : $"Activation succeeded for tag '{tag.TagName}'.";
+
+                case AbilityActivateResult.FailedAbilityNotFound:
+                    return $"No registered ability matched the exact MainTag '{tag.TagName}'.";
+
+                case AbilityActivateResult.FailedAlreadyActive:
+                    return ability != null
+                        ? $"{ability.name} is already active and its ReactivationPolicy is Deny."
+                        : "The target ability is already active and denied reactivation.";
+
+                case AbilityActivateResult.FailedCanNotUse:
+                    return ability != null
+                        ? wasAlreadyActive && ability.ReactivationPolicy == AbilityReactivationPolicy.Reactivate
+                            ? $"{ability.name} rejected reactivation because CanActivate returned false."
+                            : $"{ability.name} rejected activation because CanActivate returned false."
+                        : "The target ability rejected activation because CanActivate returned false.";
+
+                case AbilityActivateResult.FailedNotHasAllRequiredTag:
+                    return BuildMissingRequiredTagsDetail(ability);
+
+                case AbilityActivateResult.FailedHasAnyBlockTag:
+                    return BuildBlockedTagsDetail(ability);
+
+                case AbilityActivateResult.FailedBlockedByOther:
+                    return BuildBlockingAbilityDetail(ability);
+
+                case AbilityActivateResult.FailedInvalidActivateInfo:
+                    return "The activation payload or runtime state was invalid.";
+
+                default:
+                    return $"Activation result: {result}";
+            }
+        }
+
+        private string BuildMissingRequiredTagsDetail(Ability ability)
+        {
+            if (ability == null)
+                return "Activation failed because required tags were missing.";
+
+            List<string> missingTags = new List<string>();
+            foreach (GameTag requiredTag in ability.TagSet.ActivationRequiredTags)
+            {
+                if (!m_selectedProcessor.TagContainer.HasExactTag(requiredTag))
+                    missingTags.Add(requiredTag.TagName);
+            }
+
+            if (missingTags.Count == 0)
+                return $"{ability.name} requires tags that are not currently satisfied.";
+
+            return $"{ability.name} is missing required tags: {string.Join(", ", missingTags)}.";
+        }
+
+        private string BuildBlockedTagsDetail(Ability ability)
+        {
+            if (ability == null)
+                return "Activation failed because one or more blocking tags are present.";
+
+            List<string> blockingTags = new List<string>();
+            foreach (GameTag blockedTag in ability.TagSet.ActivationBlockedTags)
+            {
+                if (m_selectedProcessor.TagContainer.HasExactTag(blockedTag))
+                    blockingTags.Add(blockedTag.TagName);
+            }
+
+            if (blockingTags.Count == 0)
+                return $"{ability.name} is blocked by one or more active tags.";
+
+            return $"{ability.name} is blocked by tags: {string.Join(", ", blockingTags)}.";
+        }
+
+        private string BuildBlockingAbilityDetail(Ability ability)
+        {
+            if (ability == null)
+                return "Activation failed because another active ability is blocking this tag family.";
+
+            List<string> blockers = new List<string>();
+            foreach (AbilityRuntimeContext context in m_selectedProcessor.GetAllAbilityContexts())
+            {
+                if (context == null || context.Ability == null || !context.IsActive)
+                    continue;
+
+                foreach (GameTag blockTag in context.Ability.TagSet.BlockAbilitiesWithTag)
+                {
+                    if (ability.MainTag.ChildOf(blockTag))
+                    {
+                        blockers.Add($"{context.Ability.name} -> {blockTag.TagName}");
+                        break;
+                    }
+                }
+            }
+
+            if (blockers.Count == 0)
+                return $"{ability.name} is blocked by another active ability.";
+
+            return $"{ability.name} is blocked by active abilities: {string.Join(", ", blockers)}.";
+        }
+
+        private static MessageType GetActivationResultMessageType(AbilityActivateResult result)
+        {
+            switch (result)
+            {
+                case AbilityActivateResult.Success:
+                    return MessageType.Info;
+
+                case AbilityActivateResult.None:
+                    return MessageType.None;
+
+                default:
+                    return MessageType.Warning;
+            }
         }
 
         private void RefreshCachedTagMenu()
