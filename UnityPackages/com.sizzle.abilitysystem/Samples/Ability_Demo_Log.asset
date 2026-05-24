@@ -25,5 +25,5 @@ MonoBehaviour:
   m_reactivationPolicy: 0
   m_activateMessage: Demo ability activated
   m_deactivateMessage: Demo ability finished
-  m_duration: 0.4
+  m_duration: 5
   m_includeProcessorName: 1
