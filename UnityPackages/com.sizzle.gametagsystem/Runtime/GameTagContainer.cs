@@ -346,7 +346,35 @@ namespace Sizzle.GameTagSystem
             public void Cancel() => m_cancelAction?.Invoke();
         }
 
+        public readonly struct TimedTagInfo
+        {
+            public GameTag Tag { get; }
+            public float Remaining { get; }
+
+            public TimedTagInfo(GameTag tag, float remaining)
+            {
+                Tag = tag;
+                Remaining = remaining;
+            }
+        }
+
         private List<TimedTagEntry> m_timedTags = new List<TimedTagEntry>();
+
+        public IList<TimedTagInfo> GetTimedTags()
+        {
+            List<TimedTagInfo> timedTags = new List<TimedTagInfo>(m_timedTags.Count);
+
+            for (int i = 0; i < m_timedTags.Count; i++)
+            {
+                TimedTagEntry entry = m_timedTags[i];
+                if (entry == null || entry.Cancelled)
+                    continue;
+
+                timedTags.Add(new TimedTagInfo(entry.Tag, entry.Remaining));
+            }
+
+            return timedTags;
+        }
 
         /// <summary>
         /// 지속 시간이 있는 태그를 추가합니다. <see cref="Tick"/>을 매 프레임 호출해야 만료됩니다.

@@ -1,10 +1,11 @@
 {
   "name": "com.sizzle.gametagsystem",
   "displayName": "Sizzle GameTag System",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "unity": "6000.3",
   "description": "A lightweight hierarchical gameplay tag system for Unity with exact, descendant, timed-tag, and notify-based queries.",
   "documentationUrl": "https://github.com/siz20971/SizzleGameCore/tree/main/UnityPackages/com.sizzle.gametagsystem",
+  "changelogUrl": "https://github.com/siz20971/SizzleGameCore/tree/main/UnityPackages/com.sizzle.gametagsystem/CHANGELOG.md",
   "keywords": [
     "gameplay",
     "tag",
