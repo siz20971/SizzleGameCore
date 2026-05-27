@@ -412,6 +412,7 @@ namespace Sizzle.AbilitySystem
             m_triggerableContexts.Remove(ability.TagSet.TriggerTag);
             m_activeContexts.Remove(context);
             m_pendingRemoveContexts.Remove(context);
+            OnAbilityUnregistered?.Invoke(ability, context);
             context.Dispose();
             return true;
         }
