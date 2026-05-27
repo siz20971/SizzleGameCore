@@ -185,7 +185,7 @@ namespace Sizzle.AbilitySystem
             for (int i = m_activeContexts.Count - 1; i >= 0; i--)
             {
                 AbilityRuntimeContext context = m_activeContexts[i];
-                if (context == null || context.Ability == null)
+                if (context == null || context.Ability == null || !context.IsActive)
                     continue;
                 context.Ability.UpdateTick(deltaTime, context);
             }
@@ -205,7 +205,7 @@ namespace Sizzle.AbilitySystem
             for (int i = m_activeContexts.Count - 1; i >= 0; i--)
             {
                 AbilityRuntimeContext context = m_activeContexts[i];
-                if (context == null || context.Ability == null)
+                if (context == null || context.Ability == null || !context.IsActive)
                     continue;
                 context.Ability.FixedUpdateTick(deltaTime, context);
             }
@@ -225,7 +225,7 @@ namespace Sizzle.AbilitySystem
             for (int i = m_activeContexts.Count - 1; i >= 0; i--)
             {
                 AbilityRuntimeContext context = m_activeContexts[i];
-                if (context == null || context.Ability == null)
+                if (context == null || context.Ability == null || !context.IsActive)
                     continue;
                 context.Ability.LateUpdateTick(deltaTime, context);
             }
