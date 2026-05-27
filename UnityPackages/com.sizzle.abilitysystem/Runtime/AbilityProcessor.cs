@@ -86,6 +86,18 @@ namespace Sizzle.AbilitySystem
             if (!ability)
                 return null;
 
+            if (!ability.MainTag.IsEmpty && m_activatableContexts.ContainsKey(ability.MainTag))
+            {
+                Debug.LogError($"[AbilityProcessor] RegistAbility Failed. Already registered MainTag:{ability.MainTag} Ability:{ability.name}");
+                return null;
+            }
+
+            if (!ability.TagSet.TriggerTag.IsEmpty && m_triggerableContexts.ContainsKey(ability.TagSet.TriggerTag))
+            {
+                Debug.LogError($"[AbilityProcessor] RegistAbility Failed. Already registered TriggerTag:{ability.TagSet.TriggerTag} Ability:{ability.name}");
+                return null;
+            }
+
             if (!ability.Initialize(this))
             {
                 return null;
@@ -108,17 +120,11 @@ namespace Sizzle.AbilitySystem
 
             context.Reset();
 
-            if (!string.IsNullOrEmpty(ability.MainTag.TagName))
-            {
-                if (!m_activatableContexts.TryAdd(ability.MainTag, context))
-                    Debug.Log("[AbilityProcessor] RegistAbility Failed. AlreadyExist Tag:" + ability.MainTag);
-            }
+            if (!ability.MainTag.IsEmpty)
+                m_activatableContexts.Add(ability.MainTag, context);
 
-            if (!string.IsNullOrEmpty(ability.TagSet.TriggerTag.TagName))
-            {
-                if (!m_triggerableContexts.TryAdd(ability.TagSet.TriggerTag, context))
-                    Debug.Log("[AbilityProcessor] RegistAbility Failed. AlreadyExist TriggerTag:" + ability.TagSet.TriggerTag);
-            }
+            if (!ability.TagSet.TriggerTag.IsEmpty)
+                m_triggerableContexts.Add(ability.TagSet.TriggerTag, context);
 
             m_totalContexts.Add(context);
 
