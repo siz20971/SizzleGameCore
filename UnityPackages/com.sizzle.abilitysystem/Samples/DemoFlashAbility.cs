@@ -44,7 +44,7 @@ namespace Sizzle.AbilitySystem.Samples
         {
             CacheVisualTarget(context);
 
-            if (!context.HasVisualTarget)
+            if (!context.State.HasVisualTarget)
             {
                 context.RequestComplete();
                 return;
@@ -58,7 +58,7 @@ namespace Sizzle.AbilitySystem.Samples
 
         protected override void OnUpdateTick(float deltaTime, Context context)
         {
-            if (!context.HasVisualTarget)
+            if (!context.State.HasVisualTarget)
             {
                 context.RequestComplete();
                 return;
@@ -74,7 +74,7 @@ namespace Sizzle.AbilitySystem.Samples
 
         protected override void OnDeactivate(AbilityEndReason endReason, Context context)
         {
-            if (!context.HasVisualTarget)
+            if (!context.State.HasVisualTarget)
                 return;
 
             ApplyColor(context, 0f);
