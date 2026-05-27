@@ -108,9 +108,7 @@ namespace Sizzle.GameTagSystem
             };
 
             OnTagOwnshipChanged?.Invoke(info);
-
-            foreach (IGameTagListener listener in m_gameTagListeners)
-                listener.OnGameTagOwnshipChanged(info);
+            NotifyOwnshipChangedListeners(info);
         }
 
         /// <summary>
@@ -143,9 +141,17 @@ namespace Sizzle.GameTagSystem
             };
 
             OnTagOwnshipChanged?.Invoke(info);
+            NotifyOwnshipChangedListeners(info);
+        }
 
-            foreach (IGameTagListener listener in m_gameTagListeners)
-                listener.OnGameTagOwnshipChanged(info);
+        private void NotifyOwnshipChangedListeners(GameTagOwnshipChangeInfo info)
+        {
+            if (m_gameTagListeners.Count == 0)
+                return;
+
+            IGameTagListener[] listeners = m_gameTagListeners.ToArray();
+            for (int i = 0; i < listeners.Length; i++)
+                listeners[i]?.OnGameTagOwnshipChanged(info);
         }
 
         /// <summary>
@@ -184,9 +190,17 @@ namespace Sizzle.GameTagSystem
                 return;
 
             OnTagNotified?.Invoke(tag);
+            NotifyTagListeners(tag);
+        }
 
-            foreach (IGameTagListener listener in m_gameTagListeners)
-                listener.OnGameTagNotified(tag);
+        private void NotifyTagListeners(GameTag tag)
+        {
+            if (m_gameTagListeners.Count == 0)
+                return;
+
+            IGameTagListener[] listeners = m_gameTagListeners.ToArray();
+            for (int i = 0; i < listeners.Length; i++)
+                listeners[i]?.OnGameTagNotified(tag);
         }
 
         /// <summary>
