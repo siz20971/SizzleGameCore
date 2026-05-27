@@ -418,9 +418,9 @@ namespace Sizzle.AbilitySystem
         {
             TagContainer.OnTagNotified -= OnTagNotified;
 
-            for (int i = m_activeContexts.Count - 1; i >= 0; i--)
+            for (int i = m_totalContexts.Count - 1; i >= 0; i--)
             {
-                AbilityRuntimeContext context = m_activeContexts[i];
+                AbilityRuntimeContext context = m_totalContexts[i];
                 if (context != null)
                     UnregistAbilityImplement(context);
             }
