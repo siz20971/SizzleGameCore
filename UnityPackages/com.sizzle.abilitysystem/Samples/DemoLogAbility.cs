@@ -11,11 +11,8 @@ namespace Sizzle.AbilitySystem.Samples
         [SerializeField, Min(0f)] private float m_duration = 0f;
         [SerializeField] private bool m_includeProcessorName = true;
 
-        public class Context : AbilityRuntimeContext
+        public class Context : AbilityRuntimeContext<AbilityRuntimeSharedState, AbilityRuntimeSharedCache>
         {
-            protected override void OnReset()
-            {
-            }
         }
 
         protected override void OnActivate(Context context, AbilityActivatePayload payload)
@@ -28,7 +25,7 @@ namespace Sizzle.AbilitySystem.Samples
 
         protected override void OnUpdateTick(float deltaTime, Context context)
         {
-            if (m_duration > 0f && context.ElapsedTime >= m_duration)
+            if (m_duration > 0f && context.State.ElapsedTime >= m_duration)
                 context.RequestComplete();
         }
 
@@ -39,10 +36,10 @@ namespace Sizzle.AbilitySystem.Samples
 
         private string FormatMessage(Context context, string message)
         {
-            if (!m_includeProcessorName || context?.Processor == null)
+            if (!m_includeProcessorName || context?.Cache.Processor == null)
                 return message;
 
-            return $"[{context.Processor.name}] {message}";
+            return $"[{context.Cache.Processor.name}] {message}";
         }
     }
 }

@@ -1,7 +1,7 @@
 {
   "name": "com.sizzle.abilitysystem",
   "displayName": "Sizzle Ability System",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "unity": "6000.3",
   "description": "A ScriptableObject-based ability system for Unity built on hierarchical gameplay tags, activation rules, reactivation policies, and editor tooling.",
   "documentationUrl": "https://github.com/siz20971/SizzleGameCore/tree/main/UnityPackages/com.sizzle.abilitysystem",

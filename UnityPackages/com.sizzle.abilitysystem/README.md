@@ -32,17 +32,20 @@
 
 ### AbilityRuntimeContext
 
-`AbilityRuntimeContext`는 어빌리티 실행 중 변하는 상태를 보관합니다.
+최신 버전의 `AbilityRuntimeContext`는 공통 수명주기 정보와 어빌리티별 런타임 데이터를 분리해서 다룰 수 있도록 구성되어 있습니다.
 
-주요 정보:
+핵심 구조:
 
-- 현재 활성 상태
-- 경과 시간
-- 활성화 시각
-- 종료 요청 사유
-- 소유 `AbilityProcessor`, `GameObject`, `Ability`
+- `AbilityRuntimeSharedState`: 공통 실행 상태 (`IsActive`, `ElapsedTime`, `ActivatedTime`, `PendingEndReason`)
+- `AbilityRuntimeSharedCache`: 공통 참조 (`GameObject`, `Ability`, `AbilityProcessor`)
+- `AbilityRuntimeContext<TState, TCache>`: 어빌리티별 `State / Cache` 타입을 붙여 사용하는 제네릭 컨텍스트
 
-어빌리티마다 별도 컨텍스트 타입을 정의하면 런타임 상태를 안전하게 분리할 수 있습니다.
+권장 규칙:
+
+- activation 마다 초기화되어야 하는 값은 `State`
+- 오래 재사용되는 컴포넌트/오브젝트 참조는 `Cache`
+
+이전 호환성을 위해 `AbilityRuntimeContext.GameObject`, `IsActive`, `ElapsedTime` 같은 프로퍼티는 남아 있지만 `Obsolete` 상태이며, 신규 코드는 `context.State` 와 `context.Cache` 경로를 사용해야 합니다.
 
 ### AbilityProcessor
 
@@ -103,14 +106,24 @@ public class PlayerAbilityBootstrap : MonoBehaviour
 using Sizzle.AbilitySystem;
 using UnityEngine;
 
-public class DashContext : AbilityRuntimeContext
+public class DashState : AbilityRuntimeSharedState
 {
     public Vector3 Direction { get; set; }
 
-    protected override void OnReset()
+    public override void Reset()
     {
+        base.Reset();
         Direction = Vector3.zero;
     }
+}
+
+public class DashCache : AbilityRuntimeSharedCache
+{
+    public Transform Transform { get; set; }
+}
+
+public class DashContext : AbilityRuntimeContext<DashState, DashCache>
+{
 }
 
 [CreateAssetMenu(menuName = "Sizzle/Abilities/Dash")]
@@ -118,17 +131,19 @@ public class DashAbility : Ability<DashContext>
 {
     protected override bool CanActivate(DashContext context, AbilityActivatePayload payload)
     {
+        context.Cache.Transform ??= context.Cache.GameObject.transform;
         return true;
     }
 
     protected override void OnActivate(DashContext context, AbilityActivatePayload payload)
     {
+        context.State.Direction = context.Cache.Transform.forward;
         Debug.Log("Dash activated");
     }
 
     protected override void OnUpdateTick(float deltaTime, DashContext context)
     {
-        if (context.ElapsedTime >= 0.2f)
+        if (context.State.ElapsedTime >= 0.2f)
             context.RequestComplete();
     }
 
@@ -180,6 +195,12 @@ public class AbilityRegisterExample : MonoBehaviour
 8. 실행 성공 시 컨텍스트 활성화
 9. `ActivationOwnedTags`를 `TagContainer`에 추가
 10. `CancelAbilitiesWithTag` 규칙에 맞는 활성 어빌리티 취소 요청
+
+추가 보장:
+
+- 종료 요청된 어빌리티는 cleanup 전까지 추가 tick 을 더 수행하지 않습니다.
+- `MainTag` 또는 `TriggerTag`가 중복된 어빌리티는 등록이 거부됩니다.
+- 해제 시 `OnAbilityUnregistered` 이벤트가 실제로 발행됩니다.
 
 ## 태그 규칙 이해하기
 
@@ -302,6 +323,7 @@ public class AimAbility : Ability<DashContext, AimPayload>
 
 - 씬의 `AbilityProcessor` 목록 표시
 - 등록된 어빌리티와 활성 상태 확인
+- 활성화 결과, 차단 원인, 최근 이벤트 히스토리 확인
 - 태그 Add / Remove / Notify / Timed Add
 - 메인 태그로 직접 Activate 실행
 - 현재 소유 태그와 스택 확인
@@ -389,16 +411,18 @@ public class DashAbility : Ability<DashContext>
 ## 주의할 점
 
 - `AbilityProcessor.Initialize()`를 호출하지 않으면 `Default Abilities`가 등록되지 않습니다.
-- `MainTag`와 `TriggerTag`는 중복 등록 시 사전 추가에 실패할 수 있습니다.
+- `MainTag`와 `TriggerTag`는 중복 등록 시 등록 자체가 거부됩니다.
 - `ActivationRequiredTags`와 `ActivationBlockedTags`는 현재 exact 태그 기준으로 검사됩니다.
 - `CancelAbilitiesWithTag`와 `BlockAbilitiesWithTag`는 계층 태그 비교에 의존합니다.
 - `Runtime/Tasks` 아래 파일들은 현재 주석 처리된 상태라 활성 기능으로 보지 않는 편이 맞습니다.
+- `AbilityRuntimeContext`의 구형 직접 프로퍼티는 호환용으로만 유지되며, 신규 구현은 `State / Cache` 접근을 사용해야 합니다.
 
 ## 요약
 
 이 패키지는 다음 두 축으로 이해하면 됩니다.
 
 - `Ability`: ScriptableObject로 정의하는 실행 로직
+- `AbilityRuntimeContext`: 공통 실행 상태와 어빌리티별 `State / Cache`를 보관하는 런타임 컨텍스트
 - `AbilityProcessor`: 태그 조건, 실행 상태, 갱신 루프를 관리하는 런타임 실행기
 
 `GameTagSystem`과 함께 사용하면 상태 기반 실행 제어, 계층 스킬 분기, 트리거 이벤트, 재실행 정책을 비교적 단순한 구조로 다룰 수 있습니다.

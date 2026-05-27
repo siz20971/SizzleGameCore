@@ -3,32 +3,83 @@ using UnityEngine;
 
 namespace Sizzle.AbilitySystem
 {
+    public abstract class AbilityRuntimeState
+    {
+        public virtual void Reset() { }
+    }
+
+    public abstract class AbilityRuntimeCache : IDisposable
+    {
+        public virtual void Dispose() { }
+    }
+
+    public class AbilityRuntimeSharedState : AbilityRuntimeState
+    {
+        public bool IsActive { get; internal set; }
+        public float ElapsedTime { get; internal set; }
+        public float ActivatedTime { get; internal set; }
+        public AbilityEndReason PendingEndReason { get; internal set; } = AbilityEndReason.None;
+
+        public override void Reset()
+        {
+            IsActive = false;
+            ElapsedTime = 0f;
+            ActivatedTime = 0f;
+            PendingEndReason = AbilityEndReason.None;
+        }
+    }
+
+    public class AbilityRuntimeSharedCache : AbilityRuntimeCache
+    {
+        public GameObject GameObject { get; internal set; }
+        public Ability Ability { get; internal set; }
+        public AbilityProcessor Processor { get; internal set; }
+    }
+
     /// <summary>
     /// 어빌리티 실행 중 발생 / 변경되는 정보들을 담는 컨텍스트 클래스입니다.
     /// </summary>
     public abstract class AbilityRuntimeContext : IDisposable
     {
-        // 최초 초기화 시점에 할당된 후 변경되지 않는 정보들
-        public GameObject GameObject { get; private set; }
-        public Ability Ability { get; private set; }
-        public AbilityProcessor Processor { get; private set; }
+        private readonly AbilityRuntimeSharedState m_state = new AbilityRuntimeSharedState();
+        private readonly AbilityRuntimeSharedCache m_cache = new AbilityRuntimeSharedCache();
 
+        protected virtual AbilityRuntimeSharedState RuntimeState => m_state;
+        protected virtual AbilityRuntimeSharedCache RuntimeCache => m_cache;
 
-        // 어빌리티 실행 중 변경되는 정보들
-        public bool IsActive { get; private set; }
-        public float ElapsedTime { get; set; }
-        public float ActivatedTime { get; private set; }
-        public AbilityEndReason PendingEndReason { get; private set; } = AbilityEndReason.None;
+        public AbilityRuntimeSharedState State => RuntimeState;
+        public AbilityRuntimeSharedCache Cache => RuntimeCache;
+
+        [Obsolete("Use Cache.GameObject instead.")]
+        public GameObject GameObject => RuntimeCache.GameObject;
+
+        [Obsolete("Use Cache.Ability instead.")]
+        public Ability Ability => RuntimeCache.Ability;
+
+        [Obsolete("Use Cache.Processor instead.")]
+        public AbilityProcessor Processor => RuntimeCache.Processor;
+
+        [Obsolete("Use State.IsActive instead.")]
+        public bool IsActive => RuntimeState.IsActive;
+
+        [Obsolete("Use State.ElapsedTime instead.")]
+        public float ElapsedTime => RuntimeState.ElapsedTime;
+
+        [Obsolete("Use State.ActivatedTime instead.")]
+        public float ActivatedTime => RuntimeState.ActivatedTime;
+
+        [Obsolete("Use State.PendingEndReason instead.")]
+        public AbilityEndReason PendingEndReason => RuntimeState.PendingEndReason;
 
         internal bool Initialize(Ability ability, AbilityProcessor processor)
         {
-            Ability = ability;
-            Processor = processor;
+            RuntimeCache.Ability = ability;
+            RuntimeCache.Processor = processor;
 
-            if (Ability == null || Processor == null)
+            if (RuntimeCache.Ability == null || RuntimeCache.Processor == null)
                 return false;
 
-            GameObject = processor.gameObject;
+            RuntimeCache.GameObject = processor.gameObject;
 
             return OnInitialize();
         }
@@ -38,22 +89,19 @@ namespace Sizzle.AbilitySystem
         /// <summary> 컨텍스트 생성 및 어빌리티가 종료될때 초기화됩니다.</summary>
         public void Reset()
         {
-            IsActive = false;
-            PendingEndReason = AbilityEndReason.None;
-            ElapsedTime = 0f;
-            ActivatedTime = 0f;
+            RuntimeState.Reset();
 
             OnReset();
         }
 
         /// <summary> 어빌리티가 실행되기 직전, 종료 직후 호출됩니다. </summary>
-        protected abstract void OnReset();
+        protected virtual void OnReset() { }
 
         // 어빌리티가 실행되었을대 호출됨
         internal void ProcessActivate()
         {
-            IsActive = true;
-            ActivatedTime = Time.time;
+            RuntimeState.IsActive = true;
+            RuntimeState.ActivatedTime = Time.time;
             OnActivated();   // ← 추가: 최초 Activate에서도 훅 호출
         }
 
@@ -69,9 +117,9 @@ namespace Sizzle.AbilitySystem
         /// </summary>
         internal void ProcessReactivate()
         {
-            ElapsedTime = 0f;
-            ActivatedTime = Time.time;
-            PendingEndReason = AbilityEndReason.None;
+            RuntimeState.ElapsedTime = 0f;
+            RuntimeState.ActivatedTime = Time.time;
+            RuntimeState.PendingEndReason = AbilityEndReason.None;
             OnActivated();   // ← OnProcessActivate → OnActivated 로 통합
             OnReactivated(); // ← 추가: Reactivate 전용 훅
         }
@@ -85,7 +133,7 @@ namespace Sizzle.AbilitySystem
         // 어빌리티가 매 프레임 업데이트될때 호출됨
         internal void ProcessUpdate(float deltaTime)
         {
-            ElapsedTime += deltaTime;
+            RuntimeState.ElapsedTime += deltaTime;
             OnUpdate(deltaTime);
         }
 
@@ -111,17 +159,34 @@ namespace Sizzle.AbilitySystem
         #region Public API for Ability Logic
         public void RequestComplete()
         {
-            IsActive = false;
-            PendingEndReason = AbilityEndReason.Completed;
+            RuntimeState.IsActive = false;
+            RuntimeState.PendingEndReason = AbilityEndReason.Completed;
         }
 
         public void RequestCancel()
         {
-            IsActive = false;
-            PendingEndReason = AbilityEndReason.Canceled;
+            RuntimeState.IsActive = false;
+            RuntimeState.PendingEndReason = AbilityEndReason.Canceled;
         }
         #endregion
 
-        public virtual void Dispose() { }
+        public virtual void Dispose()
+        {
+            RuntimeCache.Dispose();
+        }
+    }
+
+    public abstract class AbilityRuntimeContext<TState, TCache> : AbilityRuntimeContext
+        where TState : AbilityRuntimeSharedState, new()
+        where TCache : AbilityRuntimeSharedCache, new()
+    {
+        private readonly TState m_state = new TState();
+        private readonly TCache m_cache = new TCache();
+
+        protected sealed override AbilityRuntimeSharedState RuntimeState => m_state;
+        protected sealed override AbilityRuntimeSharedCache RuntimeCache => m_cache;
+
+        public new TState State => m_state;
+        public new TCache Cache => m_cache;
     }
 }
