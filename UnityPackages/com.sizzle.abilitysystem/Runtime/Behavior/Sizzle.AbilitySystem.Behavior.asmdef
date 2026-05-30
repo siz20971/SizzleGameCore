@@ -1,0 +1,26 @@
+{
+    "name": "Sizzle.AbilitySystem.Behavior",
+    "rootNamespace": "Sizzle.AbilitySystem.Behavior",
+    "references": [
+        "Sizzle.AbilitySystem",
+        "Sizzle.GameTagSystem",
+        "Unity.Behavior"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [
+        "ENABLE_BEHAVIOR"
+    ],
+    "versionDefines": [
+        {
+            "name": "com.unity.behavior",
+            "expression": "",
+            "define": "ENABLE_BEHAVIOR"
+        }
+    ],
+    "noEngineReferences": false
+}

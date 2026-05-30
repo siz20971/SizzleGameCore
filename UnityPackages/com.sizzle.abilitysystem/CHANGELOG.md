@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.3 - 2026-05-31
+
+- `Behavior` 통합을 별도 asmdef로 추가하고, 어빌리티 실행/취소/전체 취소 및 게임 태그 조작용 Unity Behavior 액션과 조건 노드를 제공했습니다.
+- `UniTask` 통합을 별도 asmdef로 추가하고, 어빌리티 실행 후 종료 대기, 활성/비활성 대기, 태그 보유/알림 대기용 비동기 확장 메서드를 제공했습니다.
+- `Timeline` 통합을 별도 asmdef로 추가하고, 어빌리티 실행/취소 및 태그 Add/Remove/Notify/Timed Add를 수행하는 커맨드 트랙을 제공했습니다.
+- `AbilityProcessor`에 문자열 기반 실행/조회 오버로드와 태그 기반 취소 API를 추가했습니다.
+- `AbilityProcessorResolver`를 추가해 `AbilityProcessor` 또는 `IAbilitySystemComponent`를 일관되게 해석하도록 정리했습니다.
+- 코어 런타임 asmdef에서 optional package `versionDefines`를 제거하고, 선택 기능 의존성을 전용 asmdef로 분리했습니다.
+
 ## 0.1.2 - 2026-05-27
 
 - `AbilityRuntimeContext`에 `State / Cache` 분리 구조와 `AbilityRuntimeContext<TState, TCache>` 제네릭 베이스를 추가했습니다.

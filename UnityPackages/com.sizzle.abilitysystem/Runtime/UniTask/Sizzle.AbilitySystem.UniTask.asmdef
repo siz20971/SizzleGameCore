@@ -1,0 +1,26 @@
+{
+    "name": "Sizzle.AbilitySystem.UniTask",
+    "rootNamespace": "Sizzle.AbilitySystem.UniTask",
+    "references": [
+        "Sizzle.AbilitySystem",
+        "Sizzle.GameTagSystem",
+        "UniTask"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [
+        "ENABLE_UNITASK"
+    ],
+    "versionDefines": [
+        {
+            "name": "com.cysharp.unitask",
+            "expression": "",
+            "define": "ENABLE_UNITASK"
+        }
+    ],
+    "noEngineReferences": false
+}

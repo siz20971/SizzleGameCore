@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Unity.Profiling;
 using UnityEngine;
 using Sizzle.GameTagSystem;
 
@@ -11,6 +12,12 @@ namespace Sizzle.AbilitySystem
 
     public class AbilityProcessor : MonoBehaviour
     {
+        private static readonly ProfilerMarker s_updateMarker = new ProfilerMarker("Sizzle.AbilityProcessor.Update");
+        private static readonly ProfilerMarker s_updateTagContainerTickMarker = new ProfilerMarker("Sizzle.AbilityProcessor.Update.TagContainerTick");
+        private static readonly ProfilerMarker s_updateActiveAbilitiesMarker = new ProfilerMarker("Sizzle.AbilityProcessor.Update.ActiveAbilities");
+        private static readonly ProfilerMarker s_updateAbilityTickMarker = new ProfilerMarker("Sizzle.AbilityProcessor.Update.AbilityTick");
+        private static readonly ProfilerMarker s_updateHookMarker = new ProfilerMarker("Sizzle.AbilityProcessor.Update.OnUpdate");
+
         public GameTagContainer TagContainer { get; } = new GameTagContainer();
 
         // References
@@ -165,6 +172,39 @@ namespace Sizzle.AbilitySystem
         }
 
         /// <summary>
+        /// 태그 문자열을 기준으로 어빌리티를 실행 요청합니다.
+        /// </summary>
+        public AbilityActivateResult TryActivateAbility(string gameTag, AbilityActivatePayload payload = null)
+        {
+            return TryActivateAbility(new GameTag(gameTag), payload);
+        }
+
+        /// <summary>
+        /// 지정한 MainTag의 활성 어빌리티에 취소를 요청합니다.
+        /// 실제 종료 처리는 cleanup 단계에서 수행됩니다.
+        /// </summary>
+        public bool CancelAbility(GameTag mainTag)
+        {
+            if (mainTag.IsEmpty)
+                return false;
+
+            AbilityRuntimeContext context = GetAbilityContext(mainTag);
+            if (context == null || context.Cache.Ability == null || !context.State.IsActive)
+                return false;
+
+            context.RequestCancel();
+            return true;
+        }
+
+        /// <summary>
+        /// 태그 문자열을 기준으로 활성 어빌리티에 취소를 요청합니다.
+        /// </summary>
+        public bool CancelAbility(string mainTag)
+        {
+            return CancelAbility(new GameTag(mainTag));
+        }
+
+        /// <summary>
         /// 현재 활성 상태인 모든 어빌리티를 취소 사유로 종료시킵니다.
         /// 종료 시 부여 중이던 ActivationOwnedTags도 함께 제거합니다.
         /// </summary>
@@ -184,19 +224,29 @@ namespace Sizzle.AbilitySystem
         #region Update Ability Ticks
         private void Update()
         {
-            float deltaTime = Time.deltaTime;
-
-            TagContainer.Tick(deltaTime);
-
-            for (int i = m_activeContexts.Count - 1; i >= 0; i--)
+            using (s_updateMarker.Auto())
             {
-                AbilityRuntimeContext context = m_activeContexts[i];
-                if (context == null || context.Cache.Ability == null || !context.State.IsActive)
-                    continue;
-                context.Cache.Ability.UpdateTick(deltaTime, context);
-            }
+                float deltaTime = Time.deltaTime;
 
-            OnUpdate();
+                using (s_updateTagContainerTickMarker.Auto())
+                    TagContainer.Tick(deltaTime);
+
+                using (s_updateActiveAbilitiesMarker.Auto())
+                {
+                    for (int i = m_activeContexts.Count - 1; i >= 0; i--)
+                    {
+                        AbilityRuntimeContext context = m_activeContexts[i];
+                        if (context == null || context.Cache.Ability == null || !context.State.IsActive)
+                            continue;
+
+                        using (s_updateAbilityTickMarker.Auto())
+                            context.Cache.Ability.UpdateTick(deltaTime, context);
+                    }
+                }
+
+                using (s_updateHookMarker.Auto())
+                    OnUpdate();
+            }
         }
 
         /// <summary>
@@ -288,14 +338,29 @@ namespace Sizzle.AbilitySystem
         }
 
         /// <summary>
+        /// 지정한 태그 문자열의 어빌리티가 현재 활성 상태인지 반환합니다.
+        /// </summary>
+        public bool IsActive(string mainTag) => IsActive(new GameTag(mainTag));
+
+        /// <summary>
         /// 지정한 태그를 MainTag로 사용하는 활성화 가능 어빌리티가 등록되어 있는지 반환합니다.
         /// </summary>
         public bool HasActivatableAbility(GameTag gameTag) => m_activatableContexts.ContainsKey(gameTag);
 
         /// <summary>
+        /// 지정한 태그 문자열을 MainTag로 사용하는 활성화 가능 어빌리티가 등록되어 있는지 반환합니다.
+        /// </summary>
+        public bool HasActivatableAbility(string gameTag) => HasActivatableAbility(new GameTag(gameTag));
+
+        /// <summary>
         /// 지정한 태그를 TriggerTag로 사용하는 트리거형 어빌리티가 등록되어 있는지 반환합니다.
         /// </summary>
         public bool HasTriggableAbility(GameTag gameTag) => m_triggerableContexts.ContainsKey(gameTag);
+
+        /// <summary>
+        /// 지정한 태그 문자열을 TriggerTag로 사용하는 트리거형 어빌리티가 등록되어 있는지 반환합니다.
+        /// </summary>
+        public bool HasTriggableAbility(string gameTag) => HasTriggableAbility(new GameTag(gameTag));
         #endregion
 
         #region Helper Methods
