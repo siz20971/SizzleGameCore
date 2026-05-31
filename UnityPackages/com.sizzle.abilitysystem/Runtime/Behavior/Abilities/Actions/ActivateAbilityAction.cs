@@ -10,7 +10,7 @@ namespace Sizzle.AbilitySystem.Behavior
     [Serializable, GeneratePropertyBag]
     [NodeDescription(
         name: "Activate Ability",
-        description: "Activates an ability by GameTag on the target AbilityProcessor and optionally waits until it finishes.",
+        description: "Activates an ability by tag string on the target AbilityProcessor and optionally waits until it finishes.",
         story: "Activate ability [AbilityTag] on [Target]",
         category: "Action/Sizzle/Ability",
         id: "2b0ebd4ef8db4f3e8b8613ecb079c001")]
@@ -19,8 +19,8 @@ namespace Sizzle.AbilitySystem.Behavior
         [Tooltip("AbilityProcessor를 찾을 대상 오브젝트입니다. 비어 있으면 현재 Behavior Graph의 GameObject를 사용합니다.")]
         [SerializeReference] public BlackboardVariable<GameObject> Target;
 
-        [Tooltip("실행할 어빌리티의 MainTag입니다.")]
-        [SerializeReference] public BlackboardVariable<GameTag> AbilityTag;
+        [Tooltip("실행할 어빌리티의 MainTag 문자열입니다.")]
+        [SerializeReference] public BlackboardVariable<string> AbilityTag = new BlackboardVariable<string>(string.Empty);
 
         [Tooltip("실행에 성공한 경우 어빌리티가 종료될 때까지 대기할지 여부입니다.")]
         [SerializeReference] public BlackboardVariable<bool> WaitForEnd = new BlackboardVariable<bool>(false);
@@ -39,7 +39,7 @@ namespace Sizzle.AbilitySystem.Behavior
                 return Status.Failure;
             }
 
-            GameTag abilityTag = AbilityTag != null ? AbilityTag.Value : default;
+            GameTag abilityTag = BehaviorAbilityUtility.GetGameTagValue(AbilityTag);
             if (abilityTag.IsEmpty)
             {
                 LogFailure("AbilityTag is empty.");

@@ -1,3 +1,4 @@
+using Sizzle.GameTagSystem;
 using Unity.Behavior;
 using UnityEngine;
 
@@ -26,6 +27,12 @@ namespace Sizzle.AbilitySystem.Behavior
         internal static bool GetBoolValue(BlackboardVariable<bool> variable)
         {
             return variable != null && variable.Value;
+        }
+
+        internal static GameTag GetGameTagValue(BlackboardVariable<string> variable)
+        {
+            string tagName = variable != null ? variable.Value : string.Empty;
+            return new GameTag(tagName);
         }
     }
 }

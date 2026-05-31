@@ -16,7 +16,7 @@ namespace Sizzle.AbilitySystem.Behavior
     public partial class HasExactGameTagCondition : Condition
     {
         [SerializeReference] public BlackboardVariable<GameObject> Target;
-        [SerializeReference] public BlackboardVariable<GameTag> Tag;
+        [SerializeReference] public BlackboardVariable<string> Tag = new BlackboardVariable<string>(string.Empty);
 
         private AbilityProcessor m_processor;
 
@@ -27,7 +27,7 @@ namespace Sizzle.AbilitySystem.Behavior
 
         public override bool IsTrue()
         {
-            GameTag tag = Tag != null ? Tag.Value : default;
+            GameTag tag = BehaviorAbilityUtility.GetGameTagValue(Tag);
             return m_processor != null && !tag.IsEmpty && m_processor.TagContainer.HasExactTag(tag);
         }
 

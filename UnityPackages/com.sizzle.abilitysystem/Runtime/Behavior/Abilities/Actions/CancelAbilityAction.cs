@@ -19,8 +19,8 @@ namespace Sizzle.AbilitySystem.Behavior
         [Tooltip("AbilityProcessor를 찾을 대상 오브젝트입니다. 비어 있으면 현재 Behavior Graph의 GameObject를 사용합니다.")]
         [SerializeReference] public BlackboardVariable<GameObject> Target;
 
-        [Tooltip("취소할 어빌리티의 MainTag입니다.")]
-        [SerializeReference] public BlackboardVariable<GameTag> AbilityTag;
+        [Tooltip("취소할 어빌리티의 MainTag 문자열입니다.")]
+        [SerializeReference] public BlackboardVariable<string> AbilityTag = new BlackboardVariable<string>(string.Empty);
 
         protected override Status OnStart()
         {
@@ -30,7 +30,7 @@ namespace Sizzle.AbilitySystem.Behavior
                 return Status.Failure;
             }
 
-            GameTag abilityTag = AbilityTag != null ? AbilityTag.Value : default;
+            GameTag abilityTag = BehaviorAbilityUtility.GetGameTagValue(AbilityTag);
             if (abilityTag.IsEmpty)
             {
                 LogFailure("AbilityTag is empty.");
