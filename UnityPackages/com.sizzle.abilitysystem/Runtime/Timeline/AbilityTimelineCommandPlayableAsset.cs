@@ -8,7 +8,7 @@ namespace Sizzle.AbilitySystem.Timeline
     [Serializable]
     public class AbilityTimelineCommandPlayableAsset : PlayableAsset, ITimelineClipAsset
     {
-        [NoFoldOut]
+        // [NoFoldOut] 
         [NotKeyable]
         public AbilityTimelineCommandPlayableBehaviour template = new AbilityTimelineCommandPlayableBehaviour();
 
