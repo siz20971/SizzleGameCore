@@ -376,6 +376,11 @@ namespace Sizzle.AbilitySystem
             if (context == null)
                 return AbilityActivateResult.FailedAbilityNotFound;
 
+            // RequestComplete/RequestCancel은 LateUpdate에서 정리되기 전에 IsActive를 false로 변경할 수 있다.
+            // 따라서 Deactivate가 실행되기 전까지는 종료 대기 상태의 컨텍스트도 여전히 사용 불가능한 것으로 간주한다.
+            if (context.State.PendingEndReason != AbilityEndReason.None)
+                return AbilityActivateResult.FailedAlreadyActive;
+
             Ability targetAbility = context.Cache.Ability;
             if (targetAbility == null)
                 return AbilityActivateResult.FailedAbilityNotFound;
