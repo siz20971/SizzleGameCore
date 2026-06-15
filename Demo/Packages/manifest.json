@@ -1,8 +1,8 @@
 {
   "dependencies": {
     "com.cysharp.unitask": "2.5.10",
-    "com.sizzle.abilitysystem": "file:D:/Repository/SizzleGameCore/UnityPackages/com.sizzle.abilitysystem",
-    "com.sizzle.gametagsystem": "file:D:/Repository/SizzleGameCore/UnityPackages/com.sizzle.gametagsystem",
+    "com.sizzle.abilitysystem": "file:../../UnityPackages/com.sizzle.abilitysystem",
+    "com.sizzle.gametagsystem": "file:../../UnityPackages/com.sizzle.gametagsystem",
     "com.unity.ai.navigation": "2.0.12",
     "com.unity.behavior": "1.0.16",
     "com.unity.collab-proxy": "2.12.4",

@@ -8,7 +8,7 @@
       "url": "https://package.openupm.com"
     },
     "com.sizzle.abilitysystem": {
-      "version": "file:D:/Repository/SizzleGameCore/UnityPackages/com.sizzle.abilitysystem",
+      "version": "file:../../UnityPackages/com.sizzle.abilitysystem",
       "depth": 0,
       "source": "local",
       "dependencies": {
@@ -16,7 +16,7 @@
       }
     },
     "com.sizzle.gametagsystem": {
-      "version": "file:D:/Repository/SizzleGameCore/UnityPackages/com.sizzle.gametagsystem",
+      "version": "file:../../UnityPackages/com.sizzle.gametagsystem",
       "depth": 0,
       "source": "local",
       "dependencies": {}
