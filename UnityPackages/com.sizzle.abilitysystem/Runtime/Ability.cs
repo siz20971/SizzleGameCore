@@ -154,6 +154,7 @@ namespace Sizzle.AbilitySystem
     /// <summary>
     /// Ability의 런타임 컨텍스트를 제네릭 타입으로 받는 추상 클래스입니다.
     /// </summary>
+    [AbilityTemplate("Basic Ability (Context Only)")]
     public abstract class Ability<TContext> : Ability
             where TContext : AbilityRuntimeContext, new()
     {
@@ -258,6 +259,7 @@ namespace Sizzle.AbilitySystem
     /// <summary>
     /// Ability의 런타임 컨텍스트와 ActivatePayload을 제네릭 타입으로 받는 추상 클래스입니다.
     /// </summary>
+    [AbilityTemplate("Ability with Payload")]
     public abstract class Ability<TContext, TActivatePayload> : Ability<TContext>
             where TContext : AbilityRuntimeContext, new()
             where TActivatePayload : AbilityActivatePayload

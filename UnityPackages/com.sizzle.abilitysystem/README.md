@@ -32,20 +32,19 @@
 
 ### AbilityRuntimeContext
 
-최신 버전의 `AbilityRuntimeContext`는 공통 수명주기 정보와 어빌리티별 런타임 데이터를 분리해서 다룰 수 있도록 구성되어 있습니다.
+어빌리티의 수명주기 정보와 개별 런타임 데이터(State/Cache)를 보관하는 클래스입니다. 
+최신 구조에서는 **"자동으로 초기화되는 값(State)"**과 **"계속 유지되는 참조(Cache)"**를 명확히 분리하면서도 상속 깊이를 최소화했습니다.
 
 핵심 구조:
 
-- `AbilityRuntimeSharedState`: 공통 실행 상태 (`IsActive`, `ElapsedTime`, `ActivatedTime`, `PendingEndReason`)
-- `AbilityRuntimeSharedCache`: 공통 참조 (`GameObject`, `Ability`, `AbilityProcessor`)
-- `AbilityRuntimeContext<TState, TCache>`: 어빌리티별 `State / Cache` 타입을 붙여 사용하는 제네릭 컨텍스트
+- `AbilityRuntimeContext`: 공통 시스템 상태 (`IsActive`, `ElapsedTime`, `GameObject`, `AbilityProcessor` 등)
+- `AbilityRuntimeContext<TState>`: 매 실행마다 자동 초기화(Reset)되는 커스텀 `State` 구조체를 포함하는 제네릭 컨텍스트
 
 권장 규칙:
 
-- activation 마다 초기화되어야 하는 값은 `State`
-- 오래 재사용되는 컴포넌트/오브젝트 참조는 `Cache`
-
-이전 호환성을 위해 `AbilityRuntimeContext.GameObject`, `IsActive`, `ElapsedTime` 같은 프로퍼티는 남아 있지만 `Obsolete` 상태이며, 신규 코드는 `context.State` 와 `context.Cache` 경로를 사용해야 합니다.
+- **State (상태)**: 어빌리티가 활성화될 때마다 초기화되어야 하는 변수는 `TState` **구조체(struct)**에 정의합니다. 프레임워크가 매 실행 시 `default`를 할당하여 자동으로 모든 변수를 0이나 null로 완벽하게 초기화해 줍니다.
+- **Cache (캐시)**: 매번 리셋될 필요 없이 수명주기 내내 유지되어야 하는 컴포넌트/오브젝트 참조는 `Context` 클래스의 **일반 멤버 변수**로 선언합니다.
+- (시스템 변수 접근): `context.IsActive`, `context.ElapsedTime`, `context.GameObject` 등 시스템 프로퍼티는 래핑 없이 `Context` 본체에서 직접 접근할 수 있습니다.
 
 ### AbilityProcessor
 
@@ -106,44 +105,36 @@ public class PlayerAbilityBootstrap : MonoBehaviour
 using Sizzle.AbilitySystem;
 using UnityEngine;
 
-public class DashState : AbilityRuntimeSharedState
+// 1. 매번 리셋이 필요한 변수들은 State 구조체에 모아둡니다.
+public struct DashState
 {
-    public Vector3 Direction { get; set; }
-
-    public override void Reset()
-    {
-        base.Reset();
-        Direction = Vector3.zero;
-    }
+    public Vector3 Direction;
 }
 
-public class DashCache : AbilityRuntimeSharedCache
+// 2. 캐시할 참조 변수는 Context의 일반 멤버로 둡니다.
+public class DashContext : AbilityRuntimeContext<DashState>
 {
-    public Transform Transform { get; set; }
+    public Transform Transform;
 }
 
-public class DashContext : AbilityRuntimeContext<DashState, DashCache>
-{
-}
-
-[CreateAssetMenu(menuName = "Sizzle/Abilities/Dash")]
+[CreateAbilityAssetMenu("Sizzle/Abilities/Dash")]
 public class DashAbility : Ability<DashContext>
 {
     protected override bool CanActivate(DashContext context, AbilityActivatePayload payload)
     {
-        context.Cache.Transform ??= context.Cache.GameObject.transform;
+        context.Transform ??= context.GameObject.transform;
         return true;
     }
 
     protected override void OnActivate(DashContext context, AbilityActivatePayload payload)
     {
-        context.State.Direction = context.Cache.Transform.forward;
+        context.State.Direction = context.Transform.forward;
         Debug.Log("Dash activated");
     }
 
     protected override void OnUpdateTick(float deltaTime, DashContext context)
     {
-        if (context.State.ElapsedTime >= 0.2f)
+        if (context.ElapsedTime >= 0.2f)
             context.RequestComplete();
     }
 
@@ -296,14 +287,18 @@ public class AimPayload : AbilityActivatePayload
     public Vector3 TargetPoint;
 }
 
-public class AimAbility : Ability<DashContext, AimPayload>
+public class AimContext : AbilityRuntimeContext
 {
-    protected override void OnActivate(DashContext context, AimPayload payload)
+}
+
+public class AimAbility : Ability<AimContext, AimPayload>
+{
+    protected override void OnActivate(AimContext context, AimPayload payload)
     {
         Debug.Log($"Aim target: {payload.TargetPoint}");
     }
 
-    protected override void OnDeactivate(AbilityEndReason endReason, DashContext context)
+    protected override void OnDeactivate(AbilityEndReason endReason, AimContext context)
     {
     }
 }
@@ -414,15 +409,14 @@ public class DashAbility : Ability<DashContext>
 - `MainTag`와 `TriggerTag`는 중복 등록 시 등록 자체가 거부됩니다.
 - `ActivationRequiredTags`와 `ActivationBlockedTags`는 현재 exact 태그 기준으로 검사됩니다.
 - `CancelAbilitiesWithTag`와 `BlockAbilitiesWithTag`는 계층 태그 비교에 의존합니다.
-- `Runtime/Tasks` 아래 파일들은 현재 주석 처리된 상태라 활성 기능으로 보지 않는 편이 맞습니다.
-- `AbilityRuntimeContext`의 구형 직접 프로퍼티는 호환용으로만 유지되며, 신규 구현은 `State / Cache` 접근을 사용해야 합니다.
+- `AbilityRuntimeContext<TState>`의 **`TState`는 반드시 필드(Field)로 선언**해야 하며, 프로퍼티(Property)로 선언 시 C# 구조체 특성상 복사본 수정 에러가 발생합니다. 프레임워크가 제공하는 기본 선언 구조를 그대로 따르세요.
 
 ## 요약
 
 이 패키지는 다음 두 축으로 이해하면 됩니다.
 
 - `Ability`: ScriptableObject로 정의하는 실행 로직
-- `AbilityRuntimeContext`: 공통 실행 상태와 어빌리티별 `State / Cache`를 보관하는 런타임 컨텍스트
+- `AbilityRuntimeContext`: 공통 실행 상태와 개별 구조체(State) 및 멤버 변수(Cache)를 보관하는 런타임 컨텍스트
 - `AbilityProcessor`: 태그 조건, 실행 상태, 갱신 루프를 관리하는 런타임 실행기
 
 `GameTagSystem`과 함께 사용하면 상태 기반 실행 제어, 계층 스킬 분기, 트리거 이벤트, 재실행 정책을 비교적 단순한 구조로 다룰 수 있습니다.
