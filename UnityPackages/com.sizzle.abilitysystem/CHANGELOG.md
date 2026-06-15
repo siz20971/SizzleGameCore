@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.4 - 2026-06-15
+- 기존 `AbilityRuntimeContext`의 `State / Cache` 구조를 `AbilityRuntimeContext<TState>` 로 간소화하고 초기화 대상을 TState로 한정했습니다.
+- `Ability` 스크립트를 생성하는 툴과 상속 대상 클래스를 지정하기 위한 `AbilityTemplate` Attribute를 추가했습니다.
+
 ## 0.1.3 - 2026-05-31
 
 - `Unity Behavior` 어빌리티 실행/취소/전체 취소 및 게임 태그 조작용 Unity Behavior 액션과 조건 노드를 추가했습니다.
