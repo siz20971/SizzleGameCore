@@ -10,34 +10,23 @@ namespace Sizzle.AbilitySystem.Samples
         [SerializeField, Min(0.01f)] private float m_duration = 0.4f;
         [SerializeField] private AnimationCurve m_blendCurve = AnimationCurve.EaseInOut(0f, 1f, 1f, 0f);
 
-        public class ContextState : AbilityRuntimeSharedState
+        public struct ContextState
         {
-            public Color OriginalColor { get; set; }
-            public bool HasVisualTarget { get; set; }
-
-            public override void Reset()
-            {
-                base.Reset();
-                OriginalColor = default;
-                HasVisualTarget = false;
-            }
+            public Color OriginalColor;
+            public bool HasVisualTarget;
         }
 
-        public class ContextCache : AbilityRuntimeSharedCache
+        public class Context : AbilityRuntimeContext<ContextState>
         {
-            public SpriteRenderer SpriteRenderer { get; set; }
-            public Renderer Renderer { get; set; }
-            public Material RuntimeMaterial { get; set; }
-            public string ColorPropertyName { get; set; }
-        }
-
-        public class Context : AbilityRuntimeContext<ContextState, ContextCache>
-        {
+            public SpriteRenderer SpriteRenderer;
+            public Renderer Renderer;
+            public Material RuntimeMaterial;
+            public string ColorPropertyName;
         }
 
         protected override bool CanActivate(Context context, AbilityActivatePayload payload)
         {
-            return context?.Cache.GameObject != null;
+            return context?.GameObject != null;
         }
 
         protected override void OnActivate(Context context, AbilityActivatePayload payload)
@@ -64,7 +53,7 @@ namespace Sizzle.AbilitySystem.Samples
                 return;
             }
 
-            float normalizedTime = Mathf.Clamp01(context.State.ElapsedTime / m_duration);
+            float normalizedTime = Mathf.Clamp01(context.ElapsedTime / m_duration);
             float blend = EvaluateCurve(normalizedTime);
             ApplyColor(context, blend);
 
@@ -82,58 +71,54 @@ namespace Sizzle.AbilitySystem.Samples
 
         private void CacheVisualTarget(Context context)
         {
-            ContextCache cache = context.Cache;
-            ContextState state = context.State;
-            GameObject target = cache.GameObject;
-            state.HasVisualTarget = false;
-            cache.SpriteRenderer ??= target.GetComponent<SpriteRenderer>();
+            GameObject target = context.GameObject;
+            context.State.HasVisualTarget = false;
+            context.SpriteRenderer ??= target.GetComponent<SpriteRenderer>();
 
-            if (cache.SpriteRenderer != null)
+            if (context.SpriteRenderer != null)
             {
-                state.OriginalColor = cache.SpriteRenderer.color;
-                state.HasVisualTarget = true;
+                context.State.OriginalColor = context.SpriteRenderer.color;
+                context.State.HasVisualTarget = true;
                 return;
             }
 
-            cache.Renderer ??= target.GetComponent<Renderer>();
-            if (cache.Renderer == null)
+            context.Renderer ??= target.GetComponent<Renderer>();
+            if (context.Renderer == null)
             {
                 Debug.LogWarning($"[{name}] No SpriteRenderer or Renderer found on {target.name}.", target);
                 return;
             }
 
-            cache.RuntimeMaterial ??= cache.Renderer.material;
-            if (cache.RuntimeMaterial.HasProperty("_BaseColor"))
-                cache.ColorPropertyName = "_BaseColor";
-            else if (cache.RuntimeMaterial.HasProperty("_Color"))
-                cache.ColorPropertyName = "_Color";
+            context.RuntimeMaterial ??= context.Renderer.material;
+            if (context.RuntimeMaterial.HasProperty("_BaseColor"))
+                context.ColorPropertyName = "_BaseColor";
+            else if (context.RuntimeMaterial.HasProperty("_Color"))
+                context.ColorPropertyName = "_Color";
             else
             {
                 Debug.LogWarning($"[{name}] Renderer on {target.name} does not expose _BaseColor or _Color.", target);
-                cache.RuntimeMaterial = null;
-                cache.Renderer = null;
-                cache.ColorPropertyName = null;
+                context.RuntimeMaterial = null;
+                context.Renderer = null;
+                context.ColorPropertyName = null;
                 return;
             }
 
-            state.OriginalColor = cache.RuntimeMaterial.GetColor(cache.ColorPropertyName);
-            state.HasVisualTarget = true;
+            context.State.OriginalColor = context.RuntimeMaterial.GetColor(context.ColorPropertyName);
+            context.State.HasVisualTarget = true;
         }
 
         private void ApplyColor(Context context, float blend)
         {
-            ContextCache cache = context.Cache;
-            ContextState state = context.State;
-            Color color = Color.Lerp(state.OriginalColor, m_flashColor, Mathf.Clamp01(blend));
+            Color color = Color.Lerp(context.State.OriginalColor, m_flashColor, Mathf.Clamp01(blend));
 
-            if (cache.SpriteRenderer != null)
+            if (context.SpriteRenderer != null)
             {
-                cache.SpriteRenderer.color = color;
+                context.SpriteRenderer.color = color;
                 return;
             }
 
-            if (cache.RuntimeMaterial != null && !string.IsNullOrEmpty(cache.ColorPropertyName))
-                cache.RuntimeMaterial.SetColor(cache.ColorPropertyName, color);
+            if (context.RuntimeMaterial != null && !string.IsNullOrEmpty(context.ColorPropertyName))
+                context.RuntimeMaterial.SetColor(context.ColorPropertyName, color);
         }
 
         private float EvaluateCurve(float normalizedTime)

@@ -264,7 +264,7 @@ namespace Sizzle.AbilitySystem.Editor
             m_abilityScrollPos = EditorGUILayout.BeginScrollView(m_abilityScrollPos, GUILayout.MaxHeight(150));
             foreach (AbilityRuntimeContext ctx in contexts)
             {
-                if (ctx?.Cache.Ability == null) continue;
+                if (ctx?.Ability == null) continue;
                 if (!ShouldShowAbility(ctx)) continue;
                 visibleCount++;
                 DrawAbilityRow(ctx);
@@ -278,8 +278,8 @@ namespace Sizzle.AbilitySystem.Editor
         private void DrawAbilityRow(AbilityRuntimeContext ctx)
         {
             // 한 행은 하나의 등록된 어빌리티와 그에 대한 직접 디버그 액션을 나타냅니다.
-            bool active = ctx.State.IsActive;
-            Ability ability = ctx.Cache.Ability;
+            bool active = ctx.IsActive;
+            Ability ability = ctx.Ability;
 
             Color prevBg = GUI.backgroundColor;
             GUI.backgroundColor = active ? new Color(0.2f, 0.55f, 0.2f) : new Color(0.22f, 0.22f, 0.22f);
@@ -495,7 +495,7 @@ namespace Sizzle.AbilitySystem.Editor
 
             foreach (AbilityRuntimeContext context in contexts)
             {
-                if (context?.Cache.Ability == null || !context.State.IsActive)
+                if (context?.Ability == null || !context.IsActive)
                     continue;
 
                 activeContexts.Add(context);
@@ -516,15 +516,15 @@ namespace Sizzle.AbilitySystem.Editor
         private void DrawActiveAbilityDetail(AbilityRuntimeContext context)
         {
             // 활성 어빌리티 하나의 라이프사이클 상태와 태그 규칙 스냅샷을 출력합니다.
-            Ability ability = context.Cache.Ability;
+            Ability ability = context.Ability;
             AbilityGameTagSet tagSet = ability.TagSet;
 
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
             EditorGUILayout.LabelField(ability.name, EditorStyles.boldLabel);
             EditorGUILayout.LabelField($"MainTag: {GetTagName(ability.MainTag)}", EditorStyles.miniLabel);
-            EditorGUILayout.LabelField($"Elapsed: {context.State.ElapsedTime:0.00}s", EditorStyles.miniLabel);
-            EditorGUILayout.LabelField($"Activated At: {context.State.ActivatedTime:0.00}", EditorStyles.miniLabel);
-            EditorGUILayout.LabelField($"Pending End: {context.State.PendingEndReason}", EditorStyles.miniLabel);
+            EditorGUILayout.LabelField($"Elapsed: {context.ElapsedTime:0.00}s", EditorStyles.miniLabel);
+            EditorGUILayout.LabelField($"Activated At: {context.ActivatedTime:0.00}", EditorStyles.miniLabel);
+            EditorGUILayout.LabelField($"Pending End: {context.PendingEndReason}", EditorStyles.miniLabel);
             EditorGUILayout.LabelField($"Reactivation: {ability.ReactivationPolicy}", EditorStyles.miniLabel);
             EditorGUILayout.LabelField($"Trigger Tag: {GetTagName(tagSet.TriggerTag)}", EditorStyles.miniLabel);
             EditorGUILayout.LabelField($"Owned Tags: {FormatTagList(tagSet.ActivationOwnedTags)}", EditorStyles.miniLabel);
@@ -539,13 +539,13 @@ namespace Sizzle.AbilitySystem.Editor
         {
             // 현재 프로세서 상태에서 선택한 어빌리티가 왜 활성화되거나 차단되는지 출력합니다.
             AbilityRuntimeContext context = ResolveAnalysisContext();
-            if (context?.Cache.Ability == null)
+            if (context?.Ability == null)
             {
                 EditorGUILayout.LabelField("  분석할 어빌리티를 목록에서 선택하거나 Tag 입력 후 Activate를 시도하세요.", EditorStyles.miniLabel);
                 return;
             }
 
-            Ability ability = context.Cache.Ability;
+            Ability ability = context.Ability;
             EditorGUILayout.LabelField($"Target: {ability.name}", EditorStyles.boldLabel);
             EditorGUILayout.LabelField($"MainTag: {GetTagName(ability.MainTag)}", EditorStyles.miniLabel);
 
@@ -604,7 +604,7 @@ namespace Sizzle.AbilitySystem.Editor
         private void TryActivateAndRecord(GameTag tag, Ability ability, string source)
         {
             AbilityRuntimeContext context = m_selectedProcessor.GetAbilityContext(tag);
-            Ability targetAbility = ability != null ? ability : context?.Cache.Ability;
+            Ability targetAbility = ability != null ? ability : context?.Ability;
             AddHistoryEntry("Activate", $"Request from {source}: {GetTagName(tag)}");
             AbilityActivateResult result = m_selectedProcessor.TryActivateAbility(tag);
 
@@ -612,7 +612,7 @@ namespace Sizzle.AbilitySystem.Editor
             m_lastActivationTagName = string.IsNullOrEmpty(tag.TagName) ? "(empty)" : tag.TagName;
             m_lastActivationAbilityName = targetAbility != null ? targetAbility.name : "(not found)";
             m_lastActivationResult = result;
-            m_lastActivationDetail = BuildActivationDetail(tag, targetAbility, result, context?.State.IsActive ?? false);
+            m_lastActivationDetail = BuildActivationDetail(tag, targetAbility, result, context?.IsActive ?? false);
             AddHistoryEntry("Activate", $"Result {result}: {m_lastActivationDetail}");
             Repaint();
         }
@@ -659,11 +659,11 @@ namespace Sizzle.AbilitySystem.Editor
 
         private void CancelAbilityAndRecord(AbilityRuntimeContext context, string source)
         {
-            if (context == null || context.Cache.Ability == null || !context.State.IsActive)
+            if (context == null || context.Ability == null || !context.IsActive)
                 return;
 
             context.RequestCancel();
-            AddHistoryEntry("Ability", $"Cancel request from {source}: {context.Cache.Ability.name}");
+            AddHistoryEntry("Ability", $"Cancel request from {source}: {context.Ability.name}");
         }
 
         private void CancelAllAbilitiesAndRecord()
@@ -693,10 +693,10 @@ namespace Sizzle.AbilitySystem.Editor
             List<GameTag> abilityTags = new List<GameTag>();
             foreach (AbilityRuntimeContext context in m_selectedProcessor.GetAllAbilityContexts())
             {
-                if (context?.Cache.Ability == null)
+                if (context?.Ability == null)
                     continue;
 
-                abilityTags.Add(context.Cache.Ability.MainTag);
+                abilityTags.Add(context.Ability.MainTag);
             }
 
             foreach (GameTag tag in abilityTags)
@@ -794,14 +794,14 @@ namespace Sizzle.AbilitySystem.Editor
             List<string> blockers = new List<string>();
             foreach (AbilityRuntimeContext context in m_selectedProcessor.GetAllAbilityContexts())
             {
-                if (context == null || context.Cache.Ability == null || !context.State.IsActive)
+                if (context == null || context.Ability == null || !context.IsActive)
                     continue;
 
-                foreach (GameTag blockTag in context.Cache.Ability.TagSet.BlockAbilitiesWithTag)
+                foreach (GameTag blockTag in context.Ability.TagSet.BlockAbilitiesWithTag)
                 {
                     if (ability.MainTag.ChildOf(blockTag))
                     {
-                        blockers.Add($"{context.Cache.Ability.name} -> {blockTag.TagName}");
+                        blockers.Add($"{context.Ability.name} -> {blockTag.TagName}");
                         break;
                     }
                 }
@@ -868,26 +868,26 @@ namespace Sizzle.AbilitySystem.Editor
 
         private bool ShouldShowAbility(AbilityRuntimeContext context)
         {
-            if (context?.Cache.Ability == null)
+            if (context?.Ability == null)
                 return false;
 
-            if (m_showActiveAbilitiesOnly && !context.State.IsActive)
+            if (m_showActiveAbilitiesOnly && !context.IsActive)
                 return false;
 
             if (string.IsNullOrWhiteSpace(m_abilityFilter))
                 return true;
 
             string filter = m_abilityFilter.Trim();
-            if (context.Cache.Ability.name.IndexOf(filter, System.StringComparison.OrdinalIgnoreCase) >= 0)
+            if (context.Ability.name.IndexOf(filter, System.StringComparison.OrdinalIgnoreCase) >= 0)
                 return true;
 
-            string mainTagName = context.Cache.Ability.MainTag.TagName ?? string.Empty;
+            string mainTagName = context.Ability.MainTag.TagName ?? string.Empty;
             return mainTagName.IndexOf(filter, System.StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
         private AbilityRuntimeContext ResolveAnalysisContext()
         {
-            if (m_selectedAbilityContext != null && m_selectedAbilityContext.Cache.Ability != null)
+            if (m_selectedAbilityContext != null && m_selectedAbilityContext.Ability != null)
                 return m_selectedAbilityContext;
 
             if (!string.IsNullOrWhiteSpace(m_lastActivationTagName))
@@ -899,9 +899,9 @@ namespace Sizzle.AbilitySystem.Editor
         private IList<string> BuildBlockerAnalysisLines(AbilityRuntimeContext context)
         {
             List<string> lines = new List<string>();
-            Ability ability = context.Cache.Ability;
+            Ability ability = context.Ability;
 
-            if (context.State.IsActive)
+            if (context.IsActive)
                 lines.Add("- 현재 활성 상태입니다.");
             else
                 lines.Add("- 현재 비활성 상태입니다.");
@@ -931,14 +931,14 @@ namespace Sizzle.AbilitySystem.Editor
             List<string> blockingAbilities = new List<string>();
             foreach (AbilityRuntimeContext otherContext in m_selectedProcessor.GetAllAbilityContexts())
             {
-                if (otherContext?.Cache.Ability == null || !otherContext.State.IsActive)
+                if (otherContext?.Ability == null || !otherContext.IsActive)
                     continue;
 
-                foreach (GameTag blockTag in otherContext.Cache.Ability.TagSet.BlockAbilitiesWithTag)
+                foreach (GameTag blockTag in otherContext.Ability.TagSet.BlockAbilitiesWithTag)
                 {
                     if (ability.MainTag.ChildOf(blockTag))
                     {
-                        blockingAbilities.Add($"{otherContext.Cache.Ability.name} -> {blockTag.TagName}");
+                        blockingAbilities.Add($"{otherContext.Ability.name} -> {blockTag.TagName}");
                         break;
                     }
                 }
@@ -993,11 +993,11 @@ namespace Sizzle.AbilitySystem.Editor
 
         private AbilityActivateResult SimulateActivationResult(AbilityRuntimeContext context)
         {
-            if (context == null || context.Cache.Ability == null)
+            if (context == null || context.Ability == null)
                 return AbilityActivateResult.FailedAbilityNotFound;
 
-            Ability ability = context.Cache.Ability;
-            if (context.State.IsActive && ability.ReactivationPolicy == AbilityReactivationPolicy.Deny)
+            Ability ability = context.Ability;
+            if (context.IsActive && ability.ReactivationPolicy == AbilityReactivationPolicy.Deny)
                 return AbilityActivateResult.FailedAlreadyActive;
 
             if (!string.IsNullOrEmpty(ability.MainTag.TagName) && !m_selectedProcessor.HasActivatableAbility(ability.MainTag))
@@ -1017,10 +1017,10 @@ namespace Sizzle.AbilitySystem.Editor
 
             foreach (AbilityRuntimeContext otherContext in m_selectedProcessor.GetAllAbilityContexts())
             {
-                if (otherContext?.Cache.Ability == null || !otherContext.State.IsActive || ReferenceEquals(otherContext, context))
+                if (otherContext?.Ability == null || !otherContext.IsActive || ReferenceEquals(otherContext, context))
                     continue;
 
-                foreach (GameTag blockTag in otherContext.Cache.Ability.TagSet.BlockAbilitiesWithTag)
+                foreach (GameTag blockTag in otherContext.Ability.TagSet.BlockAbilitiesWithTag)
                 {
                     if (ability.MainTag.ChildOf(blockTag))
                         return AbilityActivateResult.FailedBlockedByOther;
@@ -1214,7 +1214,7 @@ namespace Sizzle.AbilitySystem.Editor
             HashSet<AbilityRuntimeContext> seenContexts = new HashSet<AbilityRuntimeContext>();
             foreach (AbilityRuntimeContext context in m_selectedProcessor.GetAllAbilityContexts())
             {
-                if (context?.Cache.Ability == null)
+                if (context?.Ability == null)
                     continue;
 
                 seenContexts.Add(context);
@@ -1227,18 +1227,18 @@ namespace Sizzle.AbilitySystem.Editor
                 }
 
                 if (!previous.IsActive && current.IsActive)
-                    AddHistoryEntry("Ability", $"Activated: {context.Cache.Ability.name}");
+                    AddHistoryEntry("Ability", $"Activated: {context.Ability.name}");
 
                 if (previous.PendingEndReason != current.PendingEndReason)
                 {
                     if (current.PendingEndReason != AbilityEndReason.None)
-                        AddHistoryEntry("Ability", $"End requested: {context.Cache.Ability.name} -> {current.PendingEndReason}");
+                        AddHistoryEntry("Ability", $"End requested: {context.Ability.name} -> {current.PendingEndReason}");
                     else if (previous.PendingEndReason != AbilityEndReason.None && !current.IsActive)
-                        AddHistoryEntry("Ability", $"Deactivated: {context.Cache.Ability.name} ({previous.PendingEndReason})");
+                        AddHistoryEntry("Ability", $"Deactivated: {context.Ability.name} ({previous.PendingEndReason})");
                 }
                 else if (previous.IsActive && !current.IsActive)
                 {
-                    AddHistoryEntry("Ability", $"Deactivated: {context.Cache.Ability.name}");
+                    AddHistoryEntry("Ability", $"Deactivated: {context.Ability.name}");
                 }
 
                 m_contextSnapshots[context] = current;
@@ -1259,8 +1259,8 @@ namespace Sizzle.AbilitySystem.Editor
         {
             return new AbilityContextSnapshot
             {
-                IsActive = context.State.IsActive,
-                PendingEndReason = context.State.PendingEndReason,
+                IsActive = context.IsActive,
+                PendingEndReason = context.PendingEndReason,
             };
         }
 
@@ -1284,7 +1284,7 @@ namespace Sizzle.AbilitySystem.Editor
 
             foreach (AbilityRuntimeContext context in m_selectedProcessor.GetAllAbilityContexts())
             {
-                if (context?.Cache.Ability == null)
+                if (context?.Ability == null)
                     continue;
 
                 m_contextSnapshots[context] = CreateSnapshot(context);

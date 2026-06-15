@@ -189,7 +189,7 @@ namespace Sizzle.AbilitySystem
                 return false;
 
             AbilityRuntimeContext context = GetAbilityContext(mainTag);
-            if (context == null || context.Cache.Ability == null || !context.State.IsActive)
+            if (context == null || context.Ability == null || !context.IsActive)
                 return false;
 
             context.RequestCancel();
@@ -212,10 +212,10 @@ namespace Sizzle.AbilitySystem
         {
             foreach (AbilityRuntimeContext context in m_activeContexts)
             {
-                if (context == null || context.Cache.Ability == null || !context.State.IsActive)
+                if (context == null || context.Ability == null || !context.IsActive)
                     continue;
-                context.Cache.Ability.Deactivate(AbilityEndReason.Canceled, context);
-                foreach (GameTag tag in context.Cache.Ability.TagSet.ActivationOwnedTags)
+                context.Ability.Deactivate(AbilityEndReason.Canceled, context);
+                foreach (GameTag tag in context.Ability.TagSet.ActivationOwnedTags)
                     TagContainer.RemoveTag(tag);
             }
             m_activeContexts.Clear();
@@ -236,11 +236,11 @@ namespace Sizzle.AbilitySystem
                     for (int i = m_activeContexts.Count - 1; i >= 0; i--)
                     {
                         AbilityRuntimeContext context = m_activeContexts[i];
-                        if (context == null || context.Cache.Ability == null || !context.State.IsActive)
+                        if (context == null || context.Ability == null || !context.IsActive)
                             continue;
 
                         using (s_updateAbilityTickMarker.Auto())
-                            context.Cache.Ability.UpdateTick(deltaTime, context);
+                            context.Ability.UpdateTick(deltaTime, context);
                     }
                 }
 
@@ -261,9 +261,9 @@ namespace Sizzle.AbilitySystem
             for (int i = m_activeContexts.Count - 1; i >= 0; i--)
             {
                 AbilityRuntimeContext context = m_activeContexts[i];
-                if (context == null || context.Cache.Ability == null || !context.State.IsActive)
+                if (context == null || context.Ability == null || !context.IsActive)
                     continue;
-                context.Cache.Ability.FixedUpdateTick(deltaTime, context);
+                context.Ability.FixedUpdateTick(deltaTime, context);
             }
 
             OnFixedUpdate();
@@ -281,9 +281,9 @@ namespace Sizzle.AbilitySystem
             for (int i = m_activeContexts.Count - 1; i >= 0; i--)
             {
                 AbilityRuntimeContext context = m_activeContexts[i];
-                if (context == null || context.Cache.Ability == null || !context.State.IsActive)
+                if (context == null || context.Ability == null || !context.IsActive)
                     continue;
-                context.Cache.Ability.LateUpdateTick(deltaTime, context);
+                context.Ability.LateUpdateTick(deltaTime, context);
             }
 
             OnLateUpdate();
@@ -299,15 +299,15 @@ namespace Sizzle.AbilitySystem
         {
             foreach (AbilityRuntimeContext context in m_activeContexts)
             {
-                if (context == null || context.Cache.Ability == null || context.State.PendingEndReason == AbilityEndReason.None)
+                if (context == null || context.Ability == null || context.PendingEndReason == AbilityEndReason.None)
                     continue;
                 m_pendingRemoveContexts.Add(context);
             }
 
             foreach (AbilityRuntimeContext context in m_pendingRemoveContexts)
             {
-                context.Cache.Ability.Deactivate(context.State.PendingEndReason, context);
-                foreach (GameTag tag in context.Cache.Ability.TagSet.ActivationOwnedTags)
+                context.Ability.Deactivate(context.PendingEndReason, context);
+                foreach (GameTag tag in context.Ability.TagSet.ActivationOwnedTags)
                     TagContainer.RemoveTag(tag);
 
                 m_activeContexts.Remove(context);
@@ -334,7 +334,7 @@ namespace Sizzle.AbilitySystem
         {
             if (!m_activatableContexts.TryGetValue(mainTag, out AbilityRuntimeContext context))
                 return false;
-            return context.State.IsActive;
+            return context.IsActive;
         }
 
         /// <summary>
@@ -378,14 +378,14 @@ namespace Sizzle.AbilitySystem
 
             // RequestComplete/RequestCancel은 LateUpdate에서 정리되기 전에 IsActive를 false로 변경할 수 있다.
             // 따라서 Deactivate가 실행되기 전까지는 종료 대기 상태의 컨텍스트도 여전히 사용 불가능한 것으로 간주한다.
-            if (context.State.PendingEndReason != AbilityEndReason.None)
+            if (context.PendingEndReason != AbilityEndReason.None)
                 return AbilityActivateResult.FailedAlreadyActive;
 
-            Ability targetAbility = context.Cache.Ability;
+            Ability targetAbility = context.Ability;
             if (targetAbility == null)
                 return AbilityActivateResult.FailedAbilityNotFound;
 
-            if (context.State.IsActive)
+            if (context.IsActive)
             {
                 switch (targetAbility.ReactivationPolicy)
                 {
@@ -432,10 +432,10 @@ namespace Sizzle.AbilitySystem
             // 실행중인 어빌리티가 다른 어빌리티 실행을 차단하는 리스트를 체크.
             foreach (AbilityRuntimeContext ctx in m_activeContexts)
             {
-                if (!ctx.State.IsActive)
+                if (!ctx.IsActive)
                     continue;
 
-                foreach (GameTag blockTag in ctx.Cache.Ability.TagSet.BlockAbilitiesWithTag)
+                foreach (GameTag blockTag in ctx.Ability.TagSet.BlockAbilitiesWithTag)
                 {
                     if (tagSet.MainTag.ChildOf(blockTag))
                         return AbilityActivateResult.FailedBlockedByOther;
@@ -452,10 +452,10 @@ namespace Sizzle.AbilitySystem
             // 어빌리티가 활성화되면 취소될 어빌리티들을 처리.
             foreach (GameTag cancelTag in tagSet.CancelAbilitiesWithTag)
             {
-                List<AbilityRuntimeContext> cancelContexts = m_activeContexts.FindAll(context => context.Cache.Ability.IsChildTag(cancelTag));
+                List<AbilityRuntimeContext> cancelContexts = m_activeContexts.FindAll(context => context.Ability.IsChildTag(cancelTag));
                 foreach (AbilityRuntimeContext ctx in cancelContexts)
                 {
-                    if (!ctx.State.IsActive) continue;
+                    if (!ctx.IsActive) continue;
                     ctx.RequestCancel();
                 }
             }
@@ -465,12 +465,12 @@ namespace Sizzle.AbilitySystem
 
         private bool UnregistAbilityImplement(AbilityRuntimeContext context)
         {
-            if (context == null || context.Cache.Ability == null)
+            if (context == null || context.Ability == null)
                 return false;
 
-            Ability ability = context.Cache.Ability;
+            Ability ability = context.Ability;
 
-            if (context.State.IsActive)
+            if (context.IsActive)
             {
                 ability.Deactivate(AbilityEndReason.Canceled, context);
                 foreach (GameTag tag in ability.TagSet.ActivationOwnedTags)

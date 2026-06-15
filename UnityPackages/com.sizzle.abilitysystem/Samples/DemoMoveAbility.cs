@@ -11,35 +11,25 @@ namespace Sizzle.AbilitySystem.Samples
         [SerializeField] private bool m_restorePositionOnEnd = true;
         [SerializeField] private AnimationCurve m_motionCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
 
-        public class ContextState : AbilityRuntimeSharedState
+        public struct ContextState
         {
-            public Vector3 StartLocalPosition { get; set; }
-
-            public override void Reset()
-            {
-                base.Reset();
-                StartLocalPosition = default;
-            }
+            public Vector3 StartLocalPosition;
         }
 
-        public class ContextCache : AbilityRuntimeSharedCache
+        public class Context : AbilityRuntimeContext<ContextState>
         {
-            public Transform TargetTransform { get; set; }
-        }
-
-        public class Context : AbilityRuntimeContext<ContextState, ContextCache>
-        {
+            public Transform TargetTransform;
         }
 
         protected override bool CanActivate(Context context, AbilityActivatePayload payload)
         {
-            return context?.Cache.GameObject != null;
+            return context?.GameObject != null;
         }
 
         protected override void OnActivate(Context context, AbilityActivatePayload payload)
         {
-            context.Cache.TargetTransform = context.Cache.GameObject.transform;
-            context.State.StartLocalPosition = context.Cache.TargetTransform.localPosition;
+            context.TargetTransform = context.GameObject.transform;
+            context.State.StartLocalPosition = context.TargetTransform.localPosition;
 
             if (m_duration <= 0f)
             {
@@ -53,13 +43,13 @@ namespace Sizzle.AbilitySystem.Samples
 
         protected override void OnUpdateTick(float deltaTime, Context context)
         {
-            if (context.Cache.TargetTransform == null)
+            if (context.TargetTransform == null)
             {
                 context.RequestCancel();
                 return;
             }
 
-            float normalizedTime = Mathf.Clamp01(context.State.ElapsedTime / m_duration);
+            float normalizedTime = Mathf.Clamp01(context.ElapsedTime / m_duration);
             ApplyPosition(context, normalizedTime);
 
             if (normalizedTime >= 1f)
@@ -68,17 +58,17 @@ namespace Sizzle.AbilitySystem.Samples
 
         protected override void OnDeactivate(AbilityEndReason endReason, Context context)
         {
-            if (m_restorePositionOnEnd && context.Cache.TargetTransform != null)
-                context.Cache.TargetTransform.localPosition = context.State.StartLocalPosition;
+            if (m_restorePositionOnEnd && context.TargetTransform != null)
+                context.TargetTransform.localPosition = context.State.StartLocalPosition;
         }
 
         private void ApplyPosition(Context context, float normalizedTime)
         {
-            if (context.Cache.TargetTransform == null)
+            if (context.TargetTransform == null)
                 return;
 
             float easedTime = EvaluateCurve(normalizedTime);
-            context.Cache.TargetTransform.localPosition = context.State.StartLocalPosition + m_localOffset * easedTime;
+            context.TargetTransform.localPosition = context.State.StartLocalPosition + m_localOffset * easedTime;
         }
 
         private float EvaluateCurve(float normalizedTime)

@@ -61,7 +61,7 @@ namespace Sizzle.AbilitySystem
                 cancellationToken.ThrowIfCancellationRequested();
 
                 AbilityRuntimeContext context = processor.GetAbilityContext(gameTag);
-                if (context == null || !context.State.IsActive)
+                if (context == null || !context.IsActive)
                     return;
 
                 await UniTask.Yield(PlayerLoopTiming.Update, cancellationToken);

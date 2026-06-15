@@ -56,12 +56,12 @@ namespace Sizzle.AbilitySystem.Behavior
                 return Status.Success;
 
             m_context = m_processor.GetAbilityContext(abilityTag);
-            return m_context != null && m_context.State.IsActive ? Status.Running : Status.Success;
+            return m_context != null && m_context.IsActive ? Status.Running : Status.Success;
         }
 
         protected override Status OnUpdate()
         {
-            return m_context == null || !m_context.State.IsActive ? Status.Success : Status.Running;
+            return m_context == null || !m_context.IsActive ? Status.Success : Status.Running;
         }
 
         protected override void OnEnd()
