@@ -212,9 +212,14 @@ namespace Sizzle.AbilitySystem
         {
             foreach (AbilityRuntimeContext context in m_activeContexts)
             {
-                if (context == null || context.Ability == null || !context.IsActive)
+                if (context == null || context.Ability == null)
                     continue;
-                context.Ability.Deactivate(AbilityEndReason.Canceled, context);
+
+                if (!context.IsActive && context.PendingEndReason == AbilityEndReason.None)
+                    continue;
+
+                AbilityEndReason reason = context.PendingEndReason != AbilityEndReason.None ? context.PendingEndReason : AbilityEndReason.Canceled;
+                context.Ability.Deactivate(reason, context);
                 foreach (GameTag tag in context.Ability.TagSet.ActivationOwnedTags)
                     TagContainer.RemoveTag(tag);
             }
@@ -470,9 +475,10 @@ namespace Sizzle.AbilitySystem
 
             Ability ability = context.Ability;
 
-            if (context.IsActive)
+            if (context.IsActive || context.PendingEndReason != AbilityEndReason.None)
             {
-                ability.Deactivate(AbilityEndReason.Canceled, context);
+                AbilityEndReason reason = context.PendingEndReason != AbilityEndReason.None ? context.PendingEndReason : AbilityEndReason.Canceled;
+                ability.Deactivate(reason, context);
                 foreach (GameTag tag in ability.TagSet.ActivationOwnedTags)
                     TagContainer.RemoveTag(tag);
             }

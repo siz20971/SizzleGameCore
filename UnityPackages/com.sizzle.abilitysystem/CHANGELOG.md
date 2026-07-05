@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.5 - 2026-07-06
+- 종료 대기 중(`PendingEndReason != None`)이면서 비활성화된 어빌리티가 `CancelAllAbilities()` 호출 시 정상적으로 `Deactivate` 처리되도록 수정했습니다.
+- 이미 비활성/종료 상태인 어빌리티에 대해 지연된 콜백이 `RequestComplete()` 또는 `RequestCancel()`을 호출할 경우 상태가 덮어씌워지지 않도록 방어 로직을 추가했습니다.
+- `UnregistAbility()` 호출 시 종료 대기 중인 어빌리티의 경우에도 누락 없이 `Deactivate` 처리가 되도록 보완했습니다.
+
 ## 0.1.4 - 2026-06-15
 - 기존 `AbilityRuntimeContext`의 `State / Cache` 구조를 `AbilityRuntimeContext<TState>` 로 간소화하고 초기화 대상을 TState로 한정했습니다.
 - `Ability` 스크립트를 생성하는 툴과 상속 대상 클래스를 지정하기 위한 `AbilityTemplate` Attribute를 추가했습니다.

@@ -105,12 +105,14 @@ namespace Sizzle.AbilitySystem
         #region Public API for Ability Logic
         public void RequestComplete()
         {
+            if (!IsActive) return;
             IsActive = false;
             PendingEndReason = AbilityEndReason.Completed;
         }
 
         public void RequestCancel()
         {
+            if (!IsActive) return;
             IsActive = false;
             PendingEndReason = AbilityEndReason.Canceled;
         }
