@@ -66,6 +66,8 @@ namespace Sizzle.GameTagSystem
         public event GameTagNotifiedHandler OnTagNotified = null;
 
         private List<IGameTagListener> m_gameTagListeners = new List<IGameTagListener>();
+        private IGameTagListener[] m_gameTagListenersCache = Array.Empty<IGameTagListener>();
+        private bool m_isGameTagListenersDirty = false;
 
         /// <summary>
         /// 태그 변경/알림을 수신할 리스너를 등록합니다.
@@ -74,6 +76,7 @@ namespace Sizzle.GameTagSystem
         public void AddListener(IGameTagListener listener)
         {
             m_gameTagListeners.Add(listener);
+            m_isGameTagListenersDirty = true;
         }
 
         /// <summary>
@@ -83,6 +86,7 @@ namespace Sizzle.GameTagSystem
         public void RemoveListener(IGameTagListener listener)
         {
             m_gameTagListeners.Remove(listener);
+            m_isGameTagListenersDirty = true;
         }
 
         /// <summary>
@@ -149,9 +153,14 @@ namespace Sizzle.GameTagSystem
             if (m_gameTagListeners.Count == 0)
                 return;
 
-            IGameTagListener[] listeners = m_gameTagListeners.ToArray();
-            for (int i = 0; i < listeners.Length; i++)
-                listeners[i]?.OnGameTagOwnshipChanged(info);
+            if (m_isGameTagListenersDirty)
+            {
+                m_gameTagListenersCache = m_gameTagListeners.ToArray();
+                m_isGameTagListenersDirty = false;
+            }
+
+            for (int i = 0; i < m_gameTagListenersCache.Length; i++)
+                m_gameTagListenersCache[i]?.OnGameTagOwnshipChanged(info);
         }
 
         /// <summary>
@@ -198,9 +207,14 @@ namespace Sizzle.GameTagSystem
             if (m_gameTagListeners.Count == 0)
                 return;
 
-            IGameTagListener[] listeners = m_gameTagListeners.ToArray();
-            for (int i = 0; i < listeners.Length; i++)
-                listeners[i]?.OnGameTagNotified(tag);
+            if (m_isGameTagListenersDirty)
+            {
+                m_gameTagListenersCache = m_gameTagListeners.ToArray();
+                m_isGameTagListenersDirty = false;
+            }
+
+            for (int i = 0; i < m_gameTagListenersCache.Length; i++)
+                m_gameTagListenersCache[i]?.OnGameTagNotified(tag);
         }
 
         /// <summary>
