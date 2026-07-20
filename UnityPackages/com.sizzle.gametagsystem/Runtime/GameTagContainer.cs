@@ -369,22 +369,29 @@ namespace Sizzle.GameTagSystem
         /// </summary>
         public readonly struct TimedTagHandle
         {
-            private readonly Action m_cancelAction;
-            private readonly Func<bool> m_isValidFunc;
+            private readonly GameTagContainer m_container;
+            private readonly TimedTagEntry m_entry;
 
-            internal TimedTagHandle(Action cancelAction, Func<bool> isValidFunc)
+            internal TimedTagHandle(GameTagContainer container, TimedTagEntry entry)
             {
-                m_cancelAction = cancelAction;
-                m_isValidFunc = isValidFunc;
+                m_container = container;
+                m_entry = entry;
             }
 
             /// <summary>아직 만료·취소되지 않은 경우 true.</summary>
-            public bool IsValid => m_isValidFunc?.Invoke() ?? false;
+            public bool IsValid => m_entry != null && !m_entry.Cancelled;
 
             /// <summary>
             /// 태그를 즉시 제거하고 타이머를 취소합니다.
             /// </summary>
-            public void Cancel() => m_cancelAction?.Invoke();
+            public void Cancel()
+            {
+                if (IsValid)
+                {
+                    m_entry.Cancelled = true;
+                    m_container.RemoveTag(m_entry.Tag);
+                }
+            }
         }
 
         public readonly struct TimedTagInfo
@@ -431,15 +438,7 @@ namespace Sizzle.GameTagSystem
             AddTag(tag);
             var entry = new TimedTagEntry(tag, duration);
             m_timedTags.Add(entry);
-            return new TimedTagHandle(
-                cancelAction: () =>
-                {
-                    if (entry.Cancelled) return;
-                    entry.Cancelled = true;
-                    RemoveTag(entry.Tag);
-                },
-                isValidFunc: () => !entry.Cancelled
-            );
+            return new TimedTagHandle(this, entry);
         }
 
         /// <summary>
