@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -38,11 +38,12 @@ namespace Sizzle.GameTagSystem
             }
         }
 
-        private static readonly object s_cacheLock = new object();
-        private static readonly Dictionary<string, CachedTagData> s_cachedTagDataByName = new Dictionary<string, CachedTagData>
+        private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, CachedTagData> s_cachedTagDataByName = new System.Collections.Concurrent.ConcurrentDictionary<string, CachedTagData>();
+
+        static GameTag()
         {
-            { string.Empty, new CachedTagData(string.Empty) }
-        };
+            s_cachedTagDataByName.TryAdd(string.Empty, new CachedTagData(string.Empty));
+        }
         
         [SerializeField] private string m_tagName;
         [NonSerialized] private CachedTagData m_cachedTagData;
@@ -240,17 +241,20 @@ namespace Sizzle.GameTagSystem
 
             string tagName = TagName;
 
-            lock (s_cacheLock)
-            {
-                if (!s_cachedTagDataByName.TryGetValue(tagName, out CachedTagData cachedTagData))
-                {
-                    cachedTagData = new CachedTagData(tagName);
-                    s_cachedTagDataByName.Add(tagName, cachedTagData);
-                }
+            // 멀티스레드 환경(또는 Job)에서의 병목을 제거하기 위해 ConcurrentDictionary 사용
+            m_cachedTagData = s_cachedTagDataByName.GetOrAdd(tagName, key => new CachedTagData(key));
+            
+            return m_cachedTagData;
+        }
 
-                m_cachedTagData = cachedTagData;
-                return cachedTagData;
-            }
+        /// <summary>
+        /// 동적 문자열(예: new GameTag("Tag_" + id))을 무분별하게 생성할 경우 정적 딕셔너리에 데이터가 계속 누적되어 메모리 릭이 발생할 수 있습니다.
+        /// 메모리 정리가 필요할 때 호출하여 캐시를 초기화합니다.
+        /// </summary>
+        public static void ClearCache()
+        {
+            s_cachedTagDataByName.Clear();
+            s_cachedTagDataByName.TryAdd(string.Empty, new CachedTagData(string.Empty));
         }
         
         /// <summary>

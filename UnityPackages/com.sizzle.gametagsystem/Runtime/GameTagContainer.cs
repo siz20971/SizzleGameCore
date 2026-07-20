@@ -410,9 +410,10 @@ namespace Sizzle.GameTagSystem
 
         private List<TimedTagEntry> m_timedTags = new List<TimedTagEntry>();
 
-        public IList<TimedTagInfo> GetTimedTags()
+        public void GetTimedTags(List<TimedTagInfo> results)
         {
-            List<TimedTagInfo> timedTags = new List<TimedTagInfo>(m_timedTags.Count);
+            if (results == null) return;
+            results.Clear();
 
             for (int i = 0; i < m_timedTags.Count; i++)
             {
@@ -420,9 +421,14 @@ namespace Sizzle.GameTagSystem
                 if (entry == null || entry.Cancelled)
                     continue;
 
-                timedTags.Add(new TimedTagInfo(entry.Tag, entry.Remaining));
+                results.Add(new TimedTagInfo(entry.Tag, entry.Remaining));
             }
+        }
 
+        public IList<TimedTagInfo> GetTimedTags()
+        {
+            List<TimedTagInfo> timedTags = new List<TimedTagInfo>(m_timedTags.Count);
+            GetTimedTags(timedTags);
             return timedTags;
         }
 
