@@ -98,9 +98,8 @@ namespace Sizzle.GameTagSystem
             if (tag.IsEmpty)
                 return;
 
-            bool addedNewTag = m_ownTagCounts.TryAdd(tag, 1);
-            if (!addedNewTag)
-                m_ownTagCounts[tag]++;
+            m_ownTagCounts.TryGetValue(tag, out int count);
+            m_ownTagCounts[tag] = count + 1;
 
             UpdateParentTagRefCounts(tag, +1);
 
@@ -121,13 +120,12 @@ namespace Sizzle.GameTagSystem
         /// </summary>
         public void RemoveTag(GameTag tag)
         {
-            if (tag.IsEmpty || !m_ownTagCounts.ContainsKey(tag))
+            if (tag.IsEmpty || !m_ownTagCounts.TryGetValue(tag, out int count))
             {
                 return;
             }
 
-            m_ownTagCounts[tag]--;
-            int remains = m_ownTagCounts[tag];
+            int remains = count - 1;
 
             UpdateParentTagRefCounts(tag, -1);
 
@@ -135,6 +133,10 @@ namespace Sizzle.GameTagSystem
             {
                 m_ownTagCounts.Remove(tag);
                 remains = 0;
+            }
+            else
+            {
+                m_ownTagCounts[tag] = remains;
             }
 
             GameTagOwnshipChangeInfo info = new GameTagOwnshipChangeInfo()
@@ -453,7 +455,9 @@ namespace Sizzle.GameTagSystem
 
                 if (entry.Cancelled)
                 {
-                    m_timedTags.RemoveAt(i);
+                    // [O(1) 삭제] 순서가 무관하므로 맨 마지막 원소와 교환 후 마지막 원소를 삭제(Swap-Back)하여 요소 이동 오버헤드 방지
+                    m_timedTags[i] = m_timedTags[m_timedTags.Count - 1];
+                    m_timedTags.RemoveAt(m_timedTags.Count - 1);
                     continue;
                 }
 
@@ -463,7 +467,10 @@ namespace Sizzle.GameTagSystem
                 {
                     entry.Cancelled = true;
                     RemoveTag(entry.Tag);
-                    m_timedTags.RemoveAt(i);
+                    
+                    // [O(1) 삭제] 순서가 무관하므로 맨 마지막 원소와 교환 후 마지막 원소를 삭제(Swap-Back)하여 요소 이동 오버헤드 방지
+                    m_timedTags[i] = m_timedTags[m_timedTags.Count - 1];
+                    m_timedTags.RemoveAt(m_timedTags.Count - 1);
                 }
             }
         }
