@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.1.6 - 2026-07-20
+- `AbilityProcessor`에 어빌리티가 활성화(Activate)되고 비활성화(Deactivate)되는 시점을 알 수 있도록 `OnAbilityActivated`, `OnAbilityDeactivated` 이벤트를 추가했습니다.
+
 ## 0.1.5 - 2026-07-06
 - 종료 대기 중(`PendingEndReason != None`)이면서 비활성화된 어빌리티가 `CancelAllAbilities()` 호출 시 정상적으로 `Deactivate` 처리되도록 수정했습니다.
 - 이미 비활성/종료 상태인 어빌리티에 대해 지연된 콜백이 `RequestComplete()` 또는 `RequestCancel()`을 호출할 경우 상태가 덮어씌워지지 않도록 방어 로직을 추가했습니다.

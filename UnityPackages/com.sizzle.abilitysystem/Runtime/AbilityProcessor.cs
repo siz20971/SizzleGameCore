@@ -9,6 +9,8 @@ namespace Sizzle.AbilitySystem
 {
     public delegate void AbilityRegisteredHandler(Ability ability, AbilityRuntimeContext context);
     public delegate void AbilityUnregisteredHandler(Ability ability, AbilityRuntimeContext context);
+    public delegate void AbilityActivatedHandler(Ability ability, AbilityRuntimeContext context);
+    public delegate void AbilityDeactivatedHandler(Ability ability, AbilityRuntimeContext context, AbilityEndReason endReason);
 
     public class AbilityProcessor : MonoBehaviour
     {
@@ -40,6 +42,8 @@ namespace Sizzle.AbilitySystem
         // Events
         public event AbilityRegisteredHandler OnAbilityRegistered;
         public event AbilityUnregisteredHandler OnAbilityUnregistered;
+        public event AbilityActivatedHandler OnAbilityActivated;
+        public event AbilityDeactivatedHandler OnAbilityDeactivated;
 
         private List<AbilityRuntimeContext> m_pendingRemoveContexts = new List<AbilityRuntimeContext>();
 
@@ -220,6 +224,7 @@ namespace Sizzle.AbilitySystem
 
                 AbilityEndReason reason = context.PendingEndReason != AbilityEndReason.None ? context.PendingEndReason : AbilityEndReason.Canceled;
                 context.Ability.Deactivate(reason, context);
+                OnAbilityDeactivated?.Invoke(context.Ability, context, reason);
                 foreach (GameTag tag in context.Ability.TagSet.ActivationOwnedTags)
                     TagContainer.RemoveTag(tag);
             }
@@ -312,6 +317,7 @@ namespace Sizzle.AbilitySystem
             foreach (AbilityRuntimeContext context in m_pendingRemoveContexts)
             {
                 context.Ability.Deactivate(context.PendingEndReason, context);
+                OnAbilityDeactivated?.Invoke(context.Ability, context, context.PendingEndReason);
                 foreach (GameTag tag in context.Ability.TagSet.ActivationOwnedTags)
                     TagContainer.RemoveTag(tag);
 
@@ -399,6 +405,7 @@ namespace Sizzle.AbilitySystem
 
                     case AbilityReactivationPolicy.RestartFromBeginning:
                         targetAbility.Deactivate(AbilityEndReason.Canceled, context);
+                        OnAbilityDeactivated?.Invoke(targetAbility, context, AbilityEndReason.Canceled);
                         foreach (GameTag tag in targetAbility.TagSet.ActivationOwnedTags)
                             TagContainer.RemoveTag(tag);
                         m_activeContexts.Remove(context);
@@ -450,6 +457,7 @@ namespace Sizzle.AbilitySystem
             // 실행.
             m_activeContexts.Add(context);
             targetAbility.Activate(context, payload);
+            OnAbilityActivated?.Invoke(targetAbility, context);
 
             foreach (GameTag tag in tagSet.ActivationOwnedTags)
                 TagContainer.AddTag(tag);
@@ -479,6 +487,7 @@ namespace Sizzle.AbilitySystem
             {
                 AbilityEndReason reason = context.PendingEndReason != AbilityEndReason.None ? context.PendingEndReason : AbilityEndReason.Canceled;
                 ability.Deactivate(reason, context);
+                OnAbilityDeactivated?.Invoke(ability, context, reason);
                 foreach (GameTag tag in ability.TagSet.ActivationOwnedTags)
                     TagContainer.RemoveTag(tag);
             }
@@ -514,6 +523,8 @@ namespace Sizzle.AbilitySystem
 
             OnAbilityRegistered = null;
             OnAbilityUnregistered = null;
+            OnAbilityActivated = null;
+            OnAbilityDeactivated = null;
         }
     }
 }
