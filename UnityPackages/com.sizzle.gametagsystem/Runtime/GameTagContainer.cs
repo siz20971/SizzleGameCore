@@ -352,7 +352,7 @@ namespace Sizzle.GameTagSystem
         // Timed Tag
         // ─────────────────────────────────────────────────────────────
 
-        private class TimedTagEntry
+        internal class TimedTagEntry
         {
             public GameTag Tag;
             public float Remaining;

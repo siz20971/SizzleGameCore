@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Text;
 using UnityEngine;
 using Sizzle.GameTagSystem;
@@ -7,9 +8,9 @@ using Sizzle.GameTagSystem;
 public class GameTagSystemTestScene : MonoBehaviour
 {
     private int selectedTab = 0;
-    private string[] tabNames = new string[] { "GameTag Compare", "GameTagContainer" };
+    private string[] tabNames = new string[] { "GameTag Compare", "GameTagContainer", "Benchmark" };
 
-    // Tab 1 Variables
+    // --- Tab 1 Variables ---
     private string inputTagString = "Skill.Attack";
     private GameTag[] sampleTags = new GameTag[]
     {
@@ -23,7 +24,7 @@ public class GameTagSystemTestScene : MonoBehaviour
         new GameTag("Item.Consumable.Potion")
     };
 
-    // Tab 2 Variables
+    // --- Tab 2 Variables ---
     private GameTagContainer container;
     private string actionTagName = "Skill.Attack.Light";
     private string queryTagName = "Skill.Attack";
@@ -35,6 +36,32 @@ public class GameTagSystemTestScene : MonoBehaviour
     
     private Vector2 logScrollPos;
     private Vector2 ownedTagScrollPos;
+
+    // --- Tab 3 (Benchmark) Variables ---
+    private string strContainerCount = "1000";
+    private string strInitialTags = "20";
+    private string strOpsCount = "10";
+    private string strTimedTags = "5";
+
+    private int benchContainerCount = 1000;
+    private int benchInitialTagsPerContainer = 20;
+    private int benchOperationsPerContainer = 10;
+    private int benchTimedTagsPerContainer = 5;
+
+    private List<GameTagContainer> benchContainers = new List<GameTagContainer>();
+    private string benchBurstResult = "Ready to test.\n";
+    private Vector2 benchBurstScroll;
+
+    private bool benchToggleQueries = false;
+    private bool benchToggleAddRemove = false;
+    private bool benchToggleTick = false;
+
+    private double benchMsQueries = 0;
+    private double benchMsAddRemove = 0;
+    private double benchMsTick = 0;
+
+    private GameTag[] precomputedTagsForBench;
+    private Stopwatch sharedStopwatch = new Stopwatch();
 
     private void Awake()
     {
@@ -63,6 +90,59 @@ public class GameTagSystemTestScene : MonoBehaviour
         {
             container.Tick(Time.deltaTime);
         }
+
+        if (selectedTab == 2 && benchContainers.Count > 0)
+        {
+            if (benchToggleQueries)
+            {
+                sharedStopwatch.Restart();
+                for (int i = 0; i < benchContainers.Count; i++)
+                {
+                    var c = benchContainers[i];
+                    for (int op = 0; op < benchOperationsPerContainer; op++)
+                    {
+                        var tag = precomputedTagsForBench[op % precomputedTagsForBench.Length];
+                        c.HasExactTag(tag);
+                        c.HasParentTag(tag);
+                        c.HasChildTag(tag);
+                    }
+                }
+                sharedStopwatch.Stop();
+                benchMsQueries = sharedStopwatch.Elapsed.TotalMilliseconds;
+            }
+            else benchMsQueries = 0;
+
+            if (benchToggleAddRemove)
+            {
+                sharedStopwatch.Restart();
+                for (int i = 0; i < benchContainers.Count; i++)
+                {
+                    var c = benchContainers[i];
+                    for (int op = 0; op < benchOperationsPerContainer; op++)
+                    {
+                        var tag = precomputedTagsForBench[op % precomputedTagsForBench.Length];
+                        c.AddTag(tag);
+                        c.RemoveTag(tag);
+                    }
+                }
+                sharedStopwatch.Stop();
+                benchMsAddRemove = sharedStopwatch.Elapsed.TotalMilliseconds;
+            }
+            else benchMsAddRemove = 0;
+
+            if (benchToggleTick)
+            {
+                float dt = Time.deltaTime;
+                sharedStopwatch.Restart();
+                for (int i = 0; i < benchContainers.Count; i++)
+                {
+                    benchContainers[i].Tick(dt);
+                }
+                sharedStopwatch.Stop();
+                benchMsTick = sharedStopwatch.Elapsed.TotalMilliseconds;
+            }
+            else benchMsTick = 0;
+        }
     }
 
     private void EnsureContainer()
@@ -80,13 +160,11 @@ public class GameTagSystemTestScene : MonoBehaviour
         GUILayout.Space(10);
 
         if (selectedTab == 0)
-        {
             DrawTab1();
-        }
         else if (selectedTab == 1)
-        {
             DrawTab2();
-        }
+        else if (selectedTab == 2)
+            DrawTab3();
 
         GUILayout.EndArea();
     }
@@ -115,13 +193,8 @@ public class GameTagSystemTestScene : MonoBehaviour
             GUILayout.BeginHorizontal();
             GUILayout.Label(sample.TagName, GUILayout.Width(160));
             
-            // Exact: 정확히 일치하는지
             bool isExact = inputTag.IsExact(sample);
-            
-            // Parent: sample이 input의 부모인지 (input이 sample의 자식인지)
             bool isParent = inputTag.StrictChildOf(sample);
-            
-            // Child: sample이 input의 자식인지
             bool isChild = sample.StrictChildOf(inputTag);
 
             GUILayout.Label(isExact.ToString(), GUILayout.Width(60));
@@ -137,21 +210,6 @@ public class GameTagSystemTestScene : MonoBehaviour
 
         // Left Panel: Controls
         GUILayout.BeginVertical(GUI.skin.box, GUILayout.Width(Screen.width * 0.45f));
-        DrawControlPanel();
-        GUILayout.EndVertical();
-
-        GUILayout.Space(10);
-
-        // Right Panel: State
-        GUILayout.BeginVertical(GUI.skin.box, GUILayout.Width(Screen.width * 0.45f));
-        DrawStatePanel();
-        GUILayout.EndVertical();
-
-        GUILayout.EndHorizontal();
-    }
-
-    private void DrawControlPanel()
-    {
         GUILayout.Label("--- Control Panel ---", GUI.skin.box);
         GUILayout.Space(6f);
 
@@ -207,10 +265,12 @@ public class GameTagSystemTestScene : MonoBehaviour
                 GUILayout.Label(logs[i]);
         }
         GUILayout.EndScrollView();
-    }
+        GUILayout.EndVertical();
 
-    private void DrawStatePanel()
-    {
+        GUILayout.Space(10);
+
+        // Right Panel: State
+        GUILayout.BeginVertical(GUI.skin.box, GUILayout.Width(Screen.width * 0.45f));
         GUILayout.Label("--- Current Owned Tags ---", GUI.skin.box);
         GUILayout.Space(6f);
 
@@ -241,8 +301,105 @@ public class GameTagSystemTestScene : MonoBehaviour
         GUILayout.Space(15f);
         GUILayout.Label("--- Summary ---", GUI.skin.box);
         GUILayout.TextArea(BuildSummaryText(ownTags), GUILayout.MinHeight(120f));
+        GUILayout.EndVertical();
+
+        GUILayout.EndHorizontal();
     }
 
+    private void DrawTab3()
+    {
+        GUILayout.BeginHorizontal();
+
+        // Panel 1: Parameters Setup
+        GUILayout.BeginVertical(GUI.skin.box, GUILayout.Width(Screen.width * 0.28f));
+        GUILayout.Label("--- Parameters ---", GUI.skin.box);
+        
+        GUILayout.BeginHorizontal();
+        GUILayout.Label("Containers:", GUILayout.Width(140));
+        strContainerCount = GUILayout.TextField(strContainerCount);
+        GUILayout.EndHorizontal();
+
+        GUILayout.BeginHorizontal();
+        GUILayout.Label("Init Tags / Container:", GUILayout.Width(140));
+        strInitialTags = GUILayout.TextField(strInitialTags);
+        GUILayout.EndHorizontal();
+
+        GUILayout.BeginHorizontal();
+        GUILayout.Label("Ops / Container:", GUILayout.Width(140));
+        strOpsCount = GUILayout.TextField(strOpsCount);
+        GUILayout.EndHorizontal();
+
+        GUILayout.BeginHorizontal();
+        GUILayout.Label("Timed Tags / Cont:", GUILayout.Width(140));
+        strTimedTags = GUILayout.TextField(strTimedTags);
+        GUILayout.EndHorizontal();
+        
+        if (int.TryParse(strContainerCount, out int c)) benchContainerCount = Mathf.Max(1, c);
+        if (int.TryParse(strInitialTags, out int t)) benchInitialTagsPerContainer = Mathf.Max(0, t);
+        if (int.TryParse(strOpsCount, out int o)) benchOperationsPerContainer = Mathf.Max(1, o);
+        if (int.TryParse(strTimedTags, out int m)) benchTimedTagsPerContainer = Mathf.Max(0, m);
+
+        GUILayout.Space(10);
+        if (GUILayout.Button("Setup Initial State", GUILayout.Height(40)))
+        {
+            SetupBenchmark();
+        }
+
+        GUILayout.Space(10);
+        GUILayout.Label($"Current Setup: {benchContainers.Count} Containers");
+        GUILayout.EndVertical();
+
+
+        // Panel 2: Burst Tests
+        GUILayout.BeginVertical(GUI.skin.box, GUILayout.Width(Screen.width * 0.35f));
+        GUILayout.Label("--- Burst Tests (One-time spike) ---", GUI.skin.box);
+
+        if (GUILayout.Button("1. Tag Creation (100,000 strings to GameTag)")) RunBurstCreation();
+        if (GUILayout.Button("2. Tag Comparison (100,000 IsExact & ChildOf)")) RunBurstComparison();
+        if (GUILayout.Button("3. Add/Remove Tag (For all setup containers)")) RunBurstAddRemove();
+
+        GUILayout.Space(10);
+        GUILayout.Label("Burst Results:", GUI.skin.box);
+        benchBurstScroll = GUILayout.BeginScrollView(benchBurstScroll, GUILayout.ExpandHeight(true));
+        GUILayout.TextArea(benchBurstResult, GUILayout.ExpandHeight(true));
+        GUILayout.EndScrollView();
+        
+        if (GUILayout.Button("Clear Results")) benchBurstResult = "";
+        GUILayout.EndVertical();
+
+
+        // Panel 3: Continuous Tests
+        GUILayout.BeginVertical(GUI.skin.box, GUILayout.Width(Screen.width * 0.33f));
+        GUILayout.Label("--- Continuous Tests (Per Frame ms) ---", GUI.skin.box);
+        
+        if (benchContainers.Count == 0)
+        {
+            GUILayout.Label("\nPlease 'Setup Initial State' first.", GUI.skin.label);
+        }
+        else
+        {
+            benchToggleQueries = GUILayout.Toggle(benchToggleQueries, " Continuous Queries (Exact/Parent/Child)");
+            GUILayout.Label($"  -> Time Taken: {benchMsQueries:F3} ms", GUI.skin.label);
+            
+            GUILayout.Space(10);
+            benchToggleAddRemove = GUILayout.Toggle(benchToggleAddRemove, " Continuous Add/Remove");
+            GUILayout.Label($"  -> Time Taken: {benchMsAddRemove:F3} ms", GUI.skin.label);
+
+            GUILayout.Space(10);
+            benchToggleTick = GUILayout.Toggle(benchToggleTick, " Continuous Timed Tag Ticking (Update)");
+            GUILayout.Label($"  -> Time Taken: {benchMsTick:F3} ms", GUI.skin.label);
+
+            GUILayout.Space(20);
+            GUILayout.Label("Total Benchmark Frame Time:", GUI.skin.box);
+            GUILayout.Label($" {(benchMsQueries + benchMsAddRemove + benchMsTick):F3} ms", GUI.skin.label);
+        }
+
+        GUILayout.EndVertical();
+
+        GUILayout.EndHorizontal();
+    }
+
+    // --- Tab 2 Helper Methods ---
     private GameTag CreateTagOrEmpty(string tagName)
     {
         string normalized = string.IsNullOrWhiteSpace(tagName) ? string.Empty : tagName.Trim();
@@ -332,5 +489,95 @@ public class GameTagSystemTestScene : MonoBehaviour
             sb.AppendLine($"Action Tag Stack: {container.GetTagStack(actionTag)}");
 
         return sb.ToString();
+    }
+
+
+    // --- Tab 3 Benchmark Helper Methods ---
+    private void SetupBenchmark()
+    {
+        benchContainers.Clear();
+        int totalUniqueTags = Mathf.Max(benchInitialTagsPerContainer + benchOperationsPerContainer, 1);
+        precomputedTagsForBench = new GameTag[totalUniqueTags];
+        
+        for(int i = 0; i < precomputedTagsForBench.Length; i++)
+        {
+            precomputedTagsForBench[i] = new GameTag($"Tag.Level1_{i}.Level2.Level3");
+        }
+
+        for (int i = 0; i < benchContainerCount; i++)
+        {
+            var c = new GameTagContainer();
+            for (int t = 0; t < benchInitialTagsPerContainer; t++)
+            {
+                c.AddTag(precomputedTagsForBench[t]);
+            }
+            for(int t = 0; t < benchTimedTagsPerContainer; t++)
+            {
+                c.AddTagTimed(new GameTag($"Timed.Tag_{t}"), 9999f);
+            }
+            benchContainers.Add(c);
+        }
+
+        // Turn off continuous test upon reset
+        benchToggleQueries = false;
+        benchToggleAddRemove = false;
+        benchToggleTick = false;
+        benchMsQueries = 0;
+        benchMsAddRemove = 0;
+        benchMsTick = 0;
+
+        benchBurstResult = $"[{DateTime.Now:HH:mm:ss}] Setup Complete: {benchContainerCount} containers initialized.\n" + benchBurstResult;
+    }
+
+    private void RunBurstCreation()
+    {
+        int count = 100000;
+        sharedStopwatch.Restart();
+        for (int i = 0; i < count; i++)
+        {
+            var t = new GameTag($"Test.Burst.Create_{i}");
+        }
+        sharedStopwatch.Stop();
+        benchBurstResult = $"[{DateTime.Now:HH:mm:ss}] Created {count} GameTags in {sharedStopwatch.Elapsed.TotalMilliseconds:F2} ms\n" + benchBurstResult;
+    }
+
+    private void RunBurstComparison()
+    {
+        int count = 100000;
+        GameTag t1 = new GameTag("Skill.Attack.Fireball");
+        GameTag t2 = new GameTag("Skill.Attack");
+        sharedStopwatch.Restart();
+        int trueCount = 0;
+        for (int i = 0; i < count; i++)
+        {
+            if (t1.StrictChildOf(t2)) trueCount++;
+            if (t1.IsExact(t2)) trueCount++;
+        }
+        sharedStopwatch.Stop();
+        benchBurstResult = $"[{DateTime.Now:HH:mm:ss}] Compared {count} times in {sharedStopwatch.Elapsed.TotalMilliseconds:F2} ms\n" + benchBurstResult;
+    }
+
+    private void RunBurstAddRemove()
+    {
+        if (benchContainers.Count == 0)
+        {
+            benchBurstResult = $"[{DateTime.Now:HH:mm:ss}] Error: No containers. Please Setup first.\n" + benchBurstResult;
+            return;
+        }
+        
+        sharedStopwatch.Restart();
+        for (int i = 0; i < benchContainers.Count; i++)
+        {
+            var c = benchContainers[i];
+            for (int op = 0; op < benchOperationsPerContainer; op++)
+            {
+                var tag = precomputedTagsForBench[op % precomputedTagsForBench.Length];
+                c.AddTag(tag);
+                c.RemoveTag(tag);
+            }
+        }
+        sharedStopwatch.Stop();
+        int totalOps = benchContainers.Count * benchOperationsPerContainer * 2;
+        benchBurstResult = $"[{DateTime.Now:HH:mm:ss}] Add/Remove {totalOps} ops in {sharedStopwatch.Elapsed.TotalMilliseconds:F2} ms\n" + benchBurstResult;
     }
 }
