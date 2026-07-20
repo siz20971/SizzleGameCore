@@ -235,7 +235,12 @@ namespace Sizzle.GameTagSystem
             if (tags == null)
                 return false;
 
-            return tags.All(tag => HasExactTag(tag));
+            for (int i = 0; i < tags.Length; i++)
+            {
+                if (!HasExactTag(tags[i]))
+                    return false;
+            }
+            return true;
         }
 
         /// <summary>
@@ -244,7 +249,15 @@ namespace Sizzle.GameTagSystem
         /// </summary>
         public bool HasExactTagsAny(GameTag[] tags)
         {
-            return tags != null && tags.Any(tag => HasExactTag(tag));
+            if (tags == null)
+                return false;
+
+            for (int i = 0; i < tags.Length; i++)
+            {
+                if (HasExactTag(tags[i]))
+                    return true;
+            }
+            return false;
         }
 
         /// <summary>
