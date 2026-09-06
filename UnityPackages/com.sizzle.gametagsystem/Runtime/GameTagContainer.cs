@@ -246,6 +246,24 @@ namespace Sizzle.GameTagSystem
         }
 
         /// <summary>
+        /// 모든 태그를 정확히 보유 중인지 확인합니다.
+        /// 리스트가 null이면 false를 반환합니다.
+        /// 배열 할당 없이 IList를 직접 순회합니다.
+        /// </summary>
+        public bool HasExactTagsAll(IList<GameTag> tags)
+        {
+            if (tags == null)
+                return false;
+
+            for (int i = 0; i < tags.Count; i++)
+            {
+                if (!HasExactTag(tags[i]))
+                    return false;
+            }
+            return true;
+        }
+
+        /// <summary>
         /// 태그 배열 중 하나라도 정확히 보유 중인지 확인합니다.
         /// 배열이 null이면 false를 반환합니다.
         /// </summary>
@@ -255,6 +273,24 @@ namespace Sizzle.GameTagSystem
                 return false;
 
             for (int i = 0; i < tags.Length; i++)
+            {
+                if (HasExactTag(tags[i]))
+                    return true;
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// 태그 리스트 중 하나라도 정확히 보유 중인지 확인합니다.
+        /// 리스트가 null이면 false를 반환합니다.
+        /// 배열 할당 없이 IList를 직접 순회합니다.
+        /// </summary>
+        public bool HasExactTagsAny(IList<GameTag> tags)
+        {
+            if (tags == null)
+                return false;
+
+            for (int i = 0; i < tags.Count; i++)
             {
                 if (HasExactTag(tags[i]))
                     return true;

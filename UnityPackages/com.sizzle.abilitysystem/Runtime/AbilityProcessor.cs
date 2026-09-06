@@ -417,9 +417,9 @@ namespace Sizzle.AbilitySystem
                             targetAbility.DoReactivateBlocked(context, payload);
                             return AbilityActivateResult.FailedCanNotUse;
                         }
-                        if (!TagContainer.HasExactTagsAll(targetAbility.TagSet.ActivationRequiredTags.ToArray()))
+                        if (!TagContainer.HasExactTagsAll(targetAbility.TagSet.ActivationRequiredTags))
                             return AbilityActivateResult.FailedNotHasAllRequiredTag;
-                        if (TagContainer.HasExactTagsAny(targetAbility.TagSet.ActivationBlockedTags.ToArray()))
+                        if (TagContainer.HasExactTagsAny(targetAbility.TagSet.ActivationBlockedTags))
                             return AbilityActivateResult.FailedHasAnyBlockTag;
                         targetAbility.DoReactivate(context, payload);
                         return AbilityActivateResult.Success;
@@ -432,12 +432,12 @@ namespace Sizzle.AbilitySystem
             AbilityGameTagSet tagSet = targetAbility.TagSet;
 
             // 활성화에 필요한 태그들이 모두 있는지 확인.
-            bool hasAllRequiredTag = TagContainer.HasExactTagsAll(tagSet.ActivationRequiredTags.ToArray());
+            bool hasAllRequiredTag = TagContainer.HasExactTagsAll(tagSet.ActivationRequiredTags);
             if (!hasAllRequiredTag)
                 return AbilityActivateResult.FailedNotHasAllRequiredTag;
 
             // 활성화를 차단하는 태그들이 하나라도 있는지 확인.
-            bool hasAnyBlockTag = TagContainer.HasExactTagsAny(tagSet.ActivationBlockedTags.ToArray());
+            bool hasAnyBlockTag = TagContainer.HasExactTagsAny(tagSet.ActivationBlockedTags);
             if (hasAnyBlockTag)
                 return AbilityActivateResult.FailedHasAnyBlockTag;
 
