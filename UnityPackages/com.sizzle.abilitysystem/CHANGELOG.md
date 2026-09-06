@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.7 - 2026-09-06
+- 어빌리티 활성화 검사 경로(`TryActivateAbilityImplement`)에서 태그 목록 검사 시 `.ToArray()` 변환을 제거하여 런타임 GC 할당을 방지했습니다.
+- `CancelAbilitiesWithTag` 처리 루프에서 `FindAll` 호출 시 발생하던 리스트 할당을 제거하고 재사용 버퍼(`m_cancelBuffer`)를 적용했습니다.
+- `AbilityProcessor` 및 `AbilityDebugger`의 `RegistAbility` / `UnregistAbility` 오타를 `RegisterAbility` / `UnregisterAbility`로 수정했습니다.
+- 동일 `MainTag`를 가진 어빌리티를 원자적으로 교체할 수 있는 `SwapAbility()` 헬퍼 메서드를 `AbilityProcessor`에 추가했습니다.
+
 ## 0.1.6 - 2026-07-20
 - `AbilityProcessor`에 어빌리티가 활성화(Activate)되고 비활성화(Deactivate)되는 시점을 알 수 있도록 `OnAbilityActivated`, `OnAbilityDeactivated` 이벤트를 추가했습니다.
 
