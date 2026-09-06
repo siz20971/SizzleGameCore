@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.3 - 2026-09-06
+
+### 변경 사항 (최적화)
+- `GameTagContainer`에 `HasExactTagsAll(IList<GameTag>)` 및 `HasExactTagsAny(IList<GameTag>)` 오버로드를 추가하여 리스트 순회 시 배열 변환(`.ToArray()`)에 따른 런타임 GC 할당 방지.
+- 에디터 `GameTagCache`의 검색 및 중복 검사 로직을 `HashSet<GameTag>` 기반으로 전환하여 $O(1)$ 성능을 확보하고, Dirty 플래그 기반으로 읽기 리스트를 재구성하도록 개선.
+
 ## 0.1.2 - 2026-07-20
 
 ### 변경 사항 (최적화)
