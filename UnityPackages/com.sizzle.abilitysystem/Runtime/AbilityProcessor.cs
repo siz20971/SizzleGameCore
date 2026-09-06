@@ -162,6 +162,23 @@ namespace Sizzle.AbilitySystem
             return UnregisterAbilityImplement(context);
         }
 
+        /// <summary>
+        /// 지정한 MainTag에 등록된 기존 어빌리티를 해제하고 새 어빌리티를 같은 태그로 등록합니다.
+        /// 기존 어빌리티가 활성 상태였다면 종료 처리까지 함께 수행합니다.
+        /// </summary>
+        /// <param name="tag">교체할 어빌리티의 MainTag</param>
+        /// <param name="newAbility">새로 등록할 어빌리티 애셋</param>
+        /// <param name="onRegistered">등록 성공 직후 호출할 콜백</param>
+        /// <returns>교체 성공 시 새 어빌리티를, 실패 시 null을 반환합니다.</returns>
+        public Ability SwapAbility(GameTag tag, Ability newAbility, Action<Ability> onRegistered = null)
+        {
+            if (tag.IsEmpty || !newAbility)
+                return null;
+
+            UnregisterAbility(tag);
+            return RegisterAbility(newAbility, onRegistered);
+        }
+
 
         /// <summary>
         /// 어빌리티를 실행 요청합니다.
