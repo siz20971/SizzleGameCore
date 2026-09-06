@@ -61,7 +61,7 @@ namespace Sizzle.AbilitySystem
         public void Initialize()
         {
             foreach (Ability ability in m_defaultAbilities)
-                RegistAbility(ability, null);
+                RegisterAbility(ability, null);
         }
 
         /// <summary> AbilityProcessor에 초기화 시점에 등록될 어빌리티 애셋 리스트를 반환합니다. 반환된 리스트는 읽기 전용입니다. </summary>
@@ -92,20 +92,20 @@ namespace Sizzle.AbilitySystem
         /// <param name="ability">등록할 어빌리티 애셋</param>
         /// <param name="onRegistered">등록 성공 직후 호출할 콜백</param>
         /// <returns>등록 성공 시 입력 어빌리티를, 실패 시 null을 반환합니다.</returns>
-        public Ability RegistAbility(Ability ability, Action<Ability> onRegistered)
+        public Ability RegisterAbility(Ability ability, Action<Ability> onRegistered)
         {
             if (!ability)
                 return null;
 
             if (!ability.MainTag.IsEmpty && m_activatableContexts.ContainsKey(ability.MainTag))
             {
-                Debug.LogError($"[AbilityProcessor] RegistAbility Failed. Already registered MainTag:{ability.MainTag} Ability:{ability.name}");
+                Debug.LogError($"[AbilityProcessor] RegisterAbility Failed. Already registered MainTag:{ability.MainTag} Ability:{ability.name}");
                 return null;
             }
 
             if (!ability.TagSet.TriggerTag.IsEmpty && m_triggerableContexts.ContainsKey(ability.TagSet.TriggerTag))
             {
-                Debug.LogError($"[AbilityProcessor] RegistAbility Failed. Already registered TriggerTag:{ability.TagSet.TriggerTag} Ability:{ability.name}");
+                Debug.LogError($"[AbilityProcessor] RegisterAbility Failed. Already registered TriggerTag:{ability.TagSet.TriggerTag} Ability:{ability.name}");
                 return null;
             }
 
@@ -118,14 +118,14 @@ namespace Sizzle.AbilitySystem
             
             if (context == null)
             {
-                Debug.LogError($"[AbilityProcessor] RegistAbility Failed. CreateContext returned null. Ability:{ability.name}");
+                Debug.LogError($"[AbilityProcessor] RegisterAbility Failed. CreateContext returned null. Ability:{ability.name}");
                 return null;
             }
 
             // runtimeContext 생성 준비.
             if (!context.Initialize(ability, this))
             {
-                Debug.LogError($"[AbilityProcessor] RegistAbility Failed. Context Initialize Failed. Ability:{ability.name}");
+                Debug.LogError($"[AbilityProcessor] RegisterAbility Failed. Context Initialize Failed. Ability:{ability.name}");
                 return null;
             }
 
@@ -151,7 +151,7 @@ namespace Sizzle.AbilitySystem
         /// </summary>
         /// <param name="tag">해제할 어빌리티의 MainTag</param>
         /// <returns>해제에 성공하면 true를 반환합니다.</returns>
-        public bool UnregistAbility(GameTag tag)
+        public bool UnregisterAbility(GameTag tag)
         {
             if (tag.IsEmpty)
                 return false;
@@ -159,7 +159,7 @@ namespace Sizzle.AbilitySystem
             if (!m_activatableContexts.TryGetValue(tag, out AbilityRuntimeContext context))
                 return false;
 
-            return UnregistAbilityImplement(context);
+            return UnregisterAbilityImplement(context);
         }
 
 
@@ -482,7 +482,7 @@ namespace Sizzle.AbilitySystem
             return AbilityActivateResult.Success;
         }
 
-        private bool UnregistAbilityImplement(AbilityRuntimeContext context)
+        private bool UnregisterAbilityImplement(AbilityRuntimeContext context)
         {
             if (context == null || context.Ability == null)
                 return false;
@@ -520,7 +520,7 @@ namespace Sizzle.AbilitySystem
             {
                 AbilityRuntimeContext context = m_totalContexts[i];
                 if (context != null)
-                    UnregistAbilityImplement(context);
+                    UnregisterAbilityImplement(context);
             }
 
             m_totalContexts.Clear();

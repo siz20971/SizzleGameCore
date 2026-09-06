@@ -700,7 +700,7 @@ namespace Sizzle.AbilitySystem.Editor
             }
 
             foreach (GameTag tag in abilityTags)
-                m_selectedProcessor.UnregistAbility(tag);
+                m_selectedProcessor.UnregisterAbility(tag);
 
             ClearOwnTagsAndRecord();
             m_selectedProcessor.Initialize();
