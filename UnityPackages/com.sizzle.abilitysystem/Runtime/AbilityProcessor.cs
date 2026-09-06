@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using Unity.Profiling;
 using UnityEngine;
 using Sizzle.GameTagSystem;
@@ -46,6 +45,7 @@ namespace Sizzle.AbilitySystem
         public event AbilityDeactivatedHandler OnAbilityDeactivated;
 
         private List<AbilityRuntimeContext> m_pendingRemoveContexts = new List<AbilityRuntimeContext>();
+        private List<AbilityRuntimeContext> m_cancelBuffer = new List<AbilityRuntimeContext>();
 
         public bool AnyAbilityIsActive => m_activeContexts.Count > 0;
 
@@ -465,11 +465,17 @@ namespace Sizzle.AbilitySystem
             // 어빌리티가 활성화되면 취소될 어빌리티들을 처리.
             foreach (GameTag cancelTag in tagSet.CancelAbilitiesWithTag)
             {
-                List<AbilityRuntimeContext> cancelContexts = m_activeContexts.FindAll(context => context.Ability.IsChildTag(cancelTag));
-                foreach (AbilityRuntimeContext ctx in cancelContexts)
+                m_cancelBuffer.Clear();
+                for (int i = 0; i < m_activeContexts.Count; i++)
                 {
-                    if (!ctx.IsActive) continue;
-                    ctx.RequestCancel();
+                    if (m_activeContexts[i].Ability.IsChildTag(cancelTag))
+                        m_cancelBuffer.Add(m_activeContexts[i]);
+                }
+
+                for (int i = 0; i < m_cancelBuffer.Count; i++)
+                {
+                    if (!m_cancelBuffer[i].IsActive) continue;
+                    m_cancelBuffer[i].RequestCancel();
                 }
             }
 
