@@ -7,6 +7,12 @@ namespace Sizzle.GameTagSystem.Editor
     [CustomPropertyDrawer(typeof(GameTag))]
     public class GameTagPropertyDrawer : PropertyDrawer
     {
+        public static bool useHierarchicalMenu
+        {
+            get => GameTagSystemEditorSettings.instance.UseHierarchicalMenu;
+            set => GameTagSystemEditorSettings.instance.UseHierarchicalMenu = value;
+        }
+
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
             SerializedProperty valueProperty = property.FindPropertyRelative("m_tagName");
@@ -44,7 +50,8 @@ namespace Sizzle.GameTagSystem.Editor
                 foreach (GameTag gameTag in allTags)
                 {
                     string tagName = gameTag.TagName;
-                    menu.AddItem(new GUIContent(tagName),
+                    string displayTagName = useHierarchicalMenu ? tagName.Replace(GameTag.SEPARATOR, '/') : tagName;
+                    menu.AddItem(new GUIContent(displayTagName),
                         valueProperty.stringValue.Equals(tagName),
                         () =>
                         {
@@ -68,12 +75,14 @@ namespace Sizzle.GameTagSystem.Editor
 
                 if (childAssetTags.Count > 0)
                 {
-                    menu.AddSeparator("-- Child Of --");
+                    menu.AddSeparator("");
+                    menu.AddDisabledItem(new GUIContent("-- Child Of --"));
                     
                     foreach (var gameTag in childAssetTags)
                     {
                         string tagName = gameTag.TagName;
-                        menu.AddItem(new GUIContent(tagName),
+                        string displayTagName = useHierarchicalMenu ? tagName.Replace(GameTag.SEPARATOR, '/') : tagName;
+                        menu.AddItem(new GUIContent(displayTagName),
                             valueProperty.stringValue.Equals(tagName),
                             () =>
                             {
@@ -85,12 +94,14 @@ namespace Sizzle.GameTagSystem.Editor
                 
                 if (containsAssetTags.Count > 0)
                 {
-                    menu.AddSeparator("-- Contains --");
+                    menu.AddSeparator("");
+                    menu.AddDisabledItem(new GUIContent("-- Contains --"));
                     
                     foreach (var gameTag in containsAssetTags)
                     {
                         string tagName = gameTag.TagName;
-                        menu.AddItem(new GUIContent(tagName),
+                        string displayTagName = useHierarchicalMenu ? tagName.Replace(GameTag.SEPARATOR, '/') : tagName;
+                        menu.AddItem(new GUIContent(displayTagName),
                             valueProperty.stringValue.Equals(tagName),
                             () =>
                             {
