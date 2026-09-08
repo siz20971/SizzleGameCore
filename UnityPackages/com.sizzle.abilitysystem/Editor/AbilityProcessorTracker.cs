@@ -4,10 +4,11 @@ using System;
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
+using UnityEditor.Toolbars;
 
 namespace Sizzle.AbilitySystem.Editor
 {
-    public class AbilityDebugger : EditorWindow
+    public class AbilityProcessorTracker : EditorWindow
     {
         private enum DebuggerTab
         {
@@ -28,10 +29,19 @@ namespace Sizzle.AbilitySystem.Editor
             public AbilityEndReason PendingEndReason;
         }
 
-        [MenuItem(PATHS.MENUITEM_ROOT + "Ability Debugger")]
+        [MenuItem(PATHS.MENUITEM_ROOT + "Ability Processor Tracker")]
         public static void ShowWindow()
         {
-            GetWindow<AbilityDebugger>("Ability Debugger");
+            GetWindow<AbilityProcessorTracker>("Ability Processor Tracker");
+        }
+
+        [MainToolbarElement(PATHS.TOOLBAR_ROOT + "Ability Processor Tracker", defaultDockPosition = MainToolbarDockPosition.Left)]
+        public static MainToolbarElement ProjectSettingsButton()
+        {
+            //var icon = EditorGUIUtility.IconContent("SettingsIcon").image as Texture2D;
+            //var content = new MainToolbarContent("Ability Tracker", icon, "");
+            var content = new MainToolbarContent("Ability Tracker");
+            return new MainToolbarButton(content, () => { ShowWindow(); });
         }
 
         // ── State ─────────────────────────────────────────────────────
