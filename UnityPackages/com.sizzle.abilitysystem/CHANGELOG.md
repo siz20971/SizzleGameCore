@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.8 - 2026-09-08
+- `AbilityGameTagCodeGenerator`의 태그 자동 생성 스크립트 경로 및 커스텀 정의 스크립트 경로를 변경할 수 있도록 `AbilitySystemEditorSettings`를 추가했습니다.
+- 경로 변경 시, 해당 경로에 파일이 존재하지 않으면 `[생성하기]` 버튼을, 존재하면 `[옮기기]` 버튼을 통해 쉽게 스크립트를 관리할 수 있는 에디터 편의 기능을 구현했습니다.
+- `GameTagUtils` 캐싱 로직이 새로 추가된 커스텀 경로를 동적으로 참조하도록 수정했습니다.
+
 ## 0.1.7 - 2026-09-06
 - 어빌리티 활성화 검사 경로(`TryActivateAbilityImplement`)에서 태그 목록 검사 시 `.ToArray()` 변환을 제거하여 런타임 GC 할당을 방지했습니다.
 - `CancelAbilitiesWithTag` 처리 루프에서 `FindAll` 호출 시 발생하던 리스트 할당을 제거하고 재사용 버퍼(`m_cancelBuffer`)를 적용했습니다.
