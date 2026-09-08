@@ -10,12 +10,10 @@ namespace Sizzle.AbilitySystem.Editor
 {
     public class AbilityGameTagCodeGenerator : EditorWindow
     {
-        private const string CLASS_NAME = "AbilityTags";
-
-        public const string GENERATED_FILE_NAME = "AbilityTags_Generated";
-        public const string GENERATED_FILE_PATH = "Assets/Scripts/Generated/" + GENERATED_FILE_NAME + ".cs";
-        public const string CUSTOM_CLASS_NAME = "AbilityTags";
-        public const string CUSTOM_FILE_PATH = "Assets/Scripts/" + CUSTOM_CLASS_NAME + ".cs";
+        public static string GENERATED_FILE_PATH => AbilitySystemEditorSettings.instance.GeneratedFilePath;
+        public static string CUSTOM_FILE_PATH => AbilitySystemEditorSettings.instance.CustomFilePath;
+        
+        private static string CLASS_NAME => Path.GetFileNameWithoutExtension(CUSTOM_FILE_PATH);
 
         [MenuItem(PATHS.MENUITEM_ROOT + "Generate AbilityTags Define Script", priority = 100)]
         public static void AskGenerate()
@@ -30,7 +28,7 @@ namespace Sizzle.AbilitySystem.Editor
                 "· 포함 항목: Ability.TagSet에 정의된 MainTag, CancelAbilitiesWithTag, BlockAbilitiesWithTag,\n" +
                 "              ActivationOwnedTags, ActivationRequiredTags, ActivationBlockedTags\n\n" +
                 "주의사항:\n" +
-                "· 이미 존재하는 '" + CUSTOM_CLASS_NAME + ".cs' 파일에 정의된 커스텀 태그는 유지되며, 자동 생성 파일에는 주석 처리됩니다.\n" +
+                "· 이미 존재하는 '" + Path.GetFileName(CUSTOM_FILE_PATH) + "' 파일에 정의된 커스텀 태그는 유지되며, 자동 생성 파일에는 주석 처리됩니다.\n" +
                 "· 자동 생성 파일은 덮어써집니다. 커스텀으로 유지하고 싶은 태그는 반드시 '" + CUSTOM_FILE_PATH + "'에 직접 추가하세요.\n\n" +
                 "계속 진행하시겠습니까?";
 
