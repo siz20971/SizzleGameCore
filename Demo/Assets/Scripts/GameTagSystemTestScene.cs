@@ -7,6 +7,8 @@ using Sizzle.GameTagSystem;
 
 public class GameTagSystemTestScene : MonoBehaviour
 {
+    public GameTag gameTagValue;
+
     private int selectedTab = 0;
     private string[] tabNames = new string[] { "GameTag Compare", "GameTagContainer", "Benchmark" };
 

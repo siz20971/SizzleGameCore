@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using UnityEditor;
 using UnityEngine;
 
@@ -7,10 +8,10 @@ namespace Sizzle.GameTagSystem.Editor
     [CustomPropertyDrawer(typeof(GameTag))]
     public class GameTagPropertyDrawer : PropertyDrawer
     {
-        public static bool useHierarchicalMenu
+        public static int hierarchyDepth
         {
-            get => GameTagSystemEditorSettings.instance.UseHierarchicalMenu;
-            set => GameTagSystemEditorSettings.instance.UseHierarchicalMenu = value;
+            get => GameTagSystemEditorSettings.instance.HierarchyDepth;
+            set => GameTagSystemEditorSettings.instance.HierarchyDepth = value;
         }
 
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
@@ -43,14 +44,15 @@ namespace Sizzle.GameTagSystem.Editor
 
             GenericMenu menu = new GenericMenu();
             
-            IList<GameTag> allTags = GameTagCache.GetCachedGameTags();
+            IList<GameTag> allTags = GameTagCache.GetCachedGameTags().OrderBy(t => t.TagName).ToList();
+            int depth = hierarchyDepth;
             
             if (string.IsNullOrEmpty(filterText)) // 필터 없으면 전부 보여줌.
             {
                 foreach (GameTag gameTag in allTags)
                 {
                     string tagName = gameTag.TagName;
-                    string displayTagName = useHierarchicalMenu ? tagName.Replace(GameTag.SEPARATOR, '/') : tagName;
+                    string displayTagName = GetDisplayTagName(tagName, depth);
                     menu.AddItem(new GUIContent(displayTagName),
                         valueProperty.stringValue.Equals(tagName),
                         () =>
@@ -81,7 +83,7 @@ namespace Sizzle.GameTagSystem.Editor
                     foreach (var gameTag in childAssetTags)
                     {
                         string tagName = gameTag.TagName;
-                        string displayTagName = useHierarchicalMenu ? tagName.Replace(GameTag.SEPARATOR, '/') : tagName;
+                        string displayTagName = GetDisplayTagName(tagName, depth);
                         menu.AddItem(new GUIContent(displayTagName),
                             valueProperty.stringValue.Equals(tagName),
                             () =>
@@ -100,7 +102,7 @@ namespace Sizzle.GameTagSystem.Editor
                     foreach (var gameTag in containsAssetTags)
                     {
                         string tagName = gameTag.TagName;
-                        string displayTagName = useHierarchicalMenu ? tagName.Replace(GameTag.SEPARATOR, '/') : tagName;
+                        string displayTagName = GetDisplayTagName(tagName, depth);
                         menu.AddItem(new GUIContent(displayTagName),
                             valueProperty.stringValue.Equals(tagName),
                             () =>
@@ -113,6 +115,29 @@ namespace Sizzle.GameTagSystem.Editor
             }
             
             menu.ShowAsContext();
+        }
+
+        private string GetDisplayTagName(string tagName, int depth)
+        {
+            if (depth == 0) 
+                return tagName;
+            
+            if (depth < 0) 
+                return tagName.Replace(GameTag.SEPARATOR, '/');
+
+            var chars = tagName.ToCharArray();
+            int replaceCount = 0;
+            for (int i = 0; i < chars.Length; i++)
+            {
+                if (chars[i] == GameTag.SEPARATOR)
+                {
+                    chars[i] = '/';
+                    replaceCount++;
+                    if (replaceCount >= depth)
+                        break;
+                }
+            }
+            return new string(chars);
         }
     }
 }

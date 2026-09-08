@@ -8,16 +8,16 @@ namespace Sizzle.GameTagSystem.Editor
     public class GameTagSystemEditorSettings : ScriptableSingleton<GameTagSystemEditorSettings>
     {
         [SerializeField] 
-        private bool m_useHierarchicalMenu = true;
+        private int m_hierarchyDepth = -1; // -1: 제한 없음, 0: 평면, 1: 1단계 분리, 2: 2단계 분리
 
-        public bool UseHierarchicalMenu
+        public int HierarchyDepth
         {
-            get => m_useHierarchicalMenu;
+            get => m_hierarchyDepth;
             set
             {
-                if (m_useHierarchicalMenu != value)
+                if (m_hierarchyDepth != value)
                 {
-                    m_useHierarchicalMenu = value;
+                    m_hierarchyDepth = value;
                     Save(true);
                 }
             }
@@ -43,13 +43,13 @@ namespace Sizzle.GameTagSystem.Editor
                     
                     EditorGUI.BeginChangeCheck();
                     
-                    GUIContent toggleLabel = new GUIContent("Use Hierarchical Menu", 
-                        "Sizzle 태그 드롭다운 메뉴를 구분자('.') 기준으로 단계별(폴더형) 메뉴로 묶어서 표시할지 여부를 설정합니다.\n해제 시 모든 태그가 하나의 리스트로 평평하게 표시됩니다.");
-                    bool newValue = EditorGUILayout.Toggle(toggleLabel, settings.UseHierarchicalMenu);
+                    GUIContent depthLabel = new GUIContent("Hierarchy Depth", 
+                        "Sizzle 태그 드롭다운 메뉴를 구분자('.') 기준으로 몇 단계까지 계층(폴더)으로 분리할지 설정합니다.\n0이면 모두 평면 리스트로 표시되며, -1이면 모든 구분자를 계층으로 분리합니다.");
+                    int newValue = EditorGUILayout.IntField(depthLabel, settings.HierarchyDepth);
                     
                     if (EditorGUI.EndChangeCheck())
                     {
-                        settings.UseHierarchicalMenu = newValue;
+                        settings.HierarchyDepth = newValue;
                     }
                 },
                 keywords = new HashSet<string>(new[] { "GameTag", "Sizzle", "Tag", "Menu" })
