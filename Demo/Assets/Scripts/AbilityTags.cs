@@ -10,7 +10,6 @@
 // ------------------------------------------------------------------------------
 using Sizzle.GameTagSystem;
 
-[GameTagPreset]
 public static partial class AbilityTags
 {
     public static readonly GameTag ABILITY_CHARACTER_COMMON_BASIC = new GameTag("Ability.Character.Common.Basic");

@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.10 - 2026-09-14
+### 버그 수정
+- `AbilityGameTagCodeGenerator`가 커스텀 클래스를 생성할 때 `[GameTagPreset]` 어트리뷰트를 중복으로 추가하여 컴파일 에러가 발생하던 문제 수정.
+- 의존성 패키지인 `com.sizzle.gametagsystem`의 버전을 0.1.6으로 업데이트.
+
 ## 0.1.9 - 2026-09-14
 - `AbilityGameTagCodeGenerator`를 통해 생성되는 태그 클래스에 `[GameTagPreset]` 어트리뷰트가 자동으로 추가되도록 개선.
 - 의존성 패키지인 `com.sizzle.gametagsystem`의 버전을 0.1.5로 업데이트.

@@ -160,7 +160,6 @@ namespace Sizzle.AbilitySystem.Editor
             sb.AppendLine("// ------------------------------------------------------------------------------");
             sb.AppendLine("using Sizzle.GameTagSystem;");
             sb.AppendLine();
-            sb.AppendLine("[GameTagPreset]");
             sb.AppendLine("public static partial class " + CLASS_NAME);
             sb.AppendLine("{");
             sb.AppendLine();
