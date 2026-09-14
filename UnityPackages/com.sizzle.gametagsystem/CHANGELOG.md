@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.5 - 2026-09-14
+
+### 기능 (에디터 자동화)
+- GameTagCache에 태그를 자동으로 수집하는 기능 추가
+  - `[GameTagPreset]` 어트리뷰트를 사용하여 정적 클래스의 태그 자동 수집 지원.
+  - `GameTagPreset` ScriptableObject 애셋을 통한 태그 관리 및 자동 수집 지원.
+  - `GameTagCacheAutoCollector`를 통한 에디터 로드/컴파일/애셋 변경 시 실시간 동기화 구현.
+
 ## 0.1.4 - 2026-09-08
 
 ### 변경 사항 (에디터 편의성)
