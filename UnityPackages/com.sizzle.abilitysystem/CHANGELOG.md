@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.9 - 2026-09-14
+- `AbilityGameTagCodeGenerator`를 통해 생성되는 태그 클래스에 `[GameTagPreset]` 어트리뷰트가 자동으로 추가되도록 개선.
+- 의존성 패키지인 `com.sizzle.gametagsystem`의 버전을 0.1.5로 업데이트.
+
 ## 0.1.8 - 2026-09-08
 - `AbilityGameTagCodeGenerator`의 태그 자동 생성 스크립트 경로 및 커스텀 정의 스크립트 경로를 변경할 수 있도록 `AbilitySystemEditorSettings`를 추가했습니다.
 - 경로 변경 시, 해당 경로에 파일이 존재하지 않으면 `[생성하기]` 버튼을, 존재하면 `[옮기기]` 버튼을 통해 쉽게 스크립트를 관리할 수 있는 에디터 편의 기능을 구현했습니다.

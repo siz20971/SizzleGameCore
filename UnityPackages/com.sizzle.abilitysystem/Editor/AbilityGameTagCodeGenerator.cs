@@ -114,6 +114,7 @@ namespace Sizzle.AbilitySystem.Editor
             sb.AppendLine("// ------------------------------------------------------------------------------");
             sb.AppendLine("using Sizzle.GameTagSystem;");
             sb.AppendLine();
+            sb.AppendLine("[GameTagPreset]");
             sb.AppendLine("public static partial class " + CLASS_NAME);
             sb.AppendLine("{");
 
@@ -157,6 +158,9 @@ namespace Sizzle.AbilitySystem.Editor
             sb.AppendLine("//");
             sb.AppendLine("// 이 코드는 'AbilityGameTagCodeGenerator.cs'에 의해 최초 생성되었습니다.");
             sb.AppendLine("// ------------------------------------------------------------------------------");
+            sb.AppendLine("using Sizzle.GameTagSystem;");
+            sb.AppendLine();
+            sb.AppendLine("[GameTagPreset]");
             sb.AppendLine("public static partial class " + CLASS_NAME);
             sb.AppendLine("{");
             sb.AppendLine();

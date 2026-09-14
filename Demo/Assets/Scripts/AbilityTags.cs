@@ -1,4 +1,4 @@
-﻿// ------------------------------------------------------------------------------
+// ------------------------------------------------------------------------------
 // 이 파일은 Ability 애셋들에 직접 작성된 태그가 아닌 커스텀 태그를 정의하는 파일입니다.
 // 프로젝트에 이 파일이 없을 경우에만, 빈 클래스로 파일이 추가됩니다.
 //
@@ -10,6 +10,7 @@
 // ------------------------------------------------------------------------------
 using Sizzle.GameTagSystem;
 
+[GameTagPreset]
 public static partial class AbilityTags
 {
     public static readonly GameTag ABILITY_CHARACTER_COMMON_BASIC = new GameTag("Ability.Character.Common.Basic");
