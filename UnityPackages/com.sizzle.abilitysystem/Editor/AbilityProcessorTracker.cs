@@ -1083,57 +1083,89 @@ namespace Sizzle.AbilitySystem.Editor
 
             if (allTags == null || allTags.Count == 0)
             {
-                menu.AddDisabledItem(new GUIContent("Cached Tags/No cached tags"));
+                menu.AddDisabledItem(new GUIContent("No cached tags"));
                 menu.ShowAsContext();
                 return;
             }
 
-            List<GameTag> childTags = new List<GameTag>();
-            List<GameTag> containsTags = new List<GameTag>();
+            int depth = GameTagSystemEditorSettings.instance.HierarchyDepth;
 
-            foreach (GameTag tag in allTags)
+            if (string.IsNullOrEmpty(filterText))
             {
-                if (string.IsNullOrEmpty(filterText))
+                foreach (GameTag tag in allTags)
+                    AddCachedTagMenuItem(menu, tag, depth, "");
+            }
+            else
+            {
+                List<GameTag> childTags = new List<GameTag>();
+                List<GameTag> containsTags = new List<GameTag>();
+
+                foreach (GameTag tag in allTags)
                 {
-                    containsTags.Add(tag);
-                    continue;
+                    if (tag.ChildOfOrExact(filterText))
+                        childTags.Add(tag);
+                    else if (tag.TagName.Contains(filterText))
+                        containsTags.Add(tag);
                 }
 
-                if (tag.ChildOfOrExact(filterText))
-                    childTags.Add(tag);
-                else if (tag.TagName.Contains(filterText))
-                    containsTags.Add(tag);
-            }
-
-            if (childTags.Count > 0)
-            {
-                foreach (GameTag tag in childTags)
-                    AddCachedTagMenuItem(menu, tag);
-            }
-
-            if (containsTags.Count > 0)
-            {
                 if (childTags.Count > 0)
-                    menu.AddSeparator("Cached Tags/");
+                {
+                    menu.AddSeparator("");
+                    menu.AddDisabledItem(new GUIContent("-- Child Of --"));
+                    foreach (GameTag tag in childTags)
+                        AddCachedTagMenuItem(menu, tag, depth, "");
+                }
 
-                foreach (GameTag tag in containsTags)
-                    AddCachedTagMenuItem(menu, tag);
+                if (containsTags.Count > 0)
+                {
+                    menu.AddSeparator("");
+                    menu.AddDisabledItem(new GUIContent("-- Contains --"));
+                    foreach (GameTag tag in containsTags)
+                        AddCachedTagMenuItem(menu, tag, depth, "");
+                }
+
+                if (childTags.Count == 0 && containsTags.Count == 0)
+                    menu.AddDisabledItem(new GUIContent("No matching tags"));
             }
-
-            if (childTags.Count == 0 && containsTags.Count == 0)
-                menu.AddDisabledItem(new GUIContent("Cached Tags/No matching tags"));
 
             menu.ShowAsContext();
         }
 
-        private void AddCachedTagMenuItem(GenericMenu menu, GameTag tag)
+        private void AddCachedTagMenuItem(GenericMenu menu, GameTag tag, int depth, string prefix)
         {
             string tagName = tag.TagName;
-            menu.AddItem(new GUIContent($"Cached Tags/{tagName}"), m_tagInput == tagName, () =>
+            string displayTagName = GetDisplayTagName(tagName, depth);
+            if (!string.IsNullOrEmpty(prefix))
+                displayTagName = prefix + displayTagName;
+
+            menu.AddItem(new GUIContent(displayTagName), m_tagInput == tagName, () =>
             {
                 m_tagInput = tagName;
                 Repaint();
             });
+        }
+
+        private string GetDisplayTagName(string tagName, int depth)
+        {
+            if (depth == 0) 
+                return tagName;
+            
+            if (depth < 0) 
+                return tagName.Replace(GameTag.SEPARATOR, '/');
+
+            var chars = tagName.ToCharArray();
+            int replaceCount = 0;
+            for (int i = 0; i < chars.Length; i++)
+            {
+                if (chars[i] == GameTag.SEPARATOR)
+                {
+                    chars[i] = '/';
+                    replaceCount++;
+                    if (replaceCount >= depth)
+                        break;
+                }
+            }
+            return new string(chars);
         }
 
         private void RefreshAbilityProcessors()
