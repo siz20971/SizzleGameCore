@@ -59,9 +59,16 @@ namespace Sizzle.GameTagSystem.Editor
                 {
                     if (type == null) continue;
 
-                    if (type.GetCustomAttribute<GameTagPresetAttribute>() != null)
+                    try
                     {
-                        CollectFromType(type);
+                        if (type.IsDefined(typeof(GameTagPresetAttribute), false))
+                        {
+                            CollectFromType(type);
+                        }
+                    }
+                    catch (Exception)
+                    {
+                        // Some types might throw exceptions when reading attributes. Ignore them.
                     }
                 }
             }
