@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.1.7 - 2026-09-20
+### 신규 기능
+- **GameTagOptionAttribute 추가**:
+  - `[GameTagOption(parent = "...")]`를 통해 인스펙터 드롭다운 선택 메뉴를 특정 부모의 하위 태그로만 제한.
+  - 직접 텍스트 입력 시 하위 이름만 입력해도 자동으로 부모 접두사 완성 (`restrictToParent`).
+  - 부모 태그 자체 허용 여부 옵션 (`includeParent`).
+  - 텍스트 직접 입력을 제한하고 팝업 선택만 강제하는 드롭다운 전용 모드 (`dropdownOnly`).
+  - 특정 태그 또는 하위 카테고리를 제외하는 필터 옵션 (`exclude`, `excludeTags`).
+  - 메뉴 트리 가독성을 위해 부모 접두사를 생략한 상대 경로 표시 옵션 (`relativePathInMenu`).
+- **GameTag 작성 시 문자 제한 및 정제**:
+  - 태그 명칭에 영문 대소문자, 숫자, 하이픈(`-`), 언더스코어(`_`), 계층 구분자(`.`)만 허용하도록 유효성 검사(`IsValidTagName`) 및 자동 정제(`SanitizeTagName`) 추가.
+  - 인스펙터 입력 시 잘못된 문자 자동 정제 및 ⚠️ 경고 피드백 표시.
+- **TagContainer Notify 페이로드 전달 기능**:
+  - `NotifyTag(GameTag tag, object payload = null)` 및 `NotifyTag<T>(GameTag tag, T payload)` 지원으로 자유로운 데이터를 함께 브로드캐스트 가능.
+  - `OnTagNotifiedWithData` 이벤트 추가.
+  - `IGameTagListener`에 C# 디폴트 인터페이스 구현(`OnGameTagNotified(GameTag, object)`)을 추가하여 기존 리스너와 100% 하위 호환성 유지.
+
 ## 0.1.6 - 2026-09-14
 ### 버그 수정
 - `GameTagCacheAutoCollector`가 유니티 내부 어셈블리 리플렉션 중 예외가 발생할 경우 수집 로직이 중단되어 [GameTagPreset] 클래스의 태그가 누락되던 문제 수정.

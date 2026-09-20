@@ -73,6 +73,17 @@ bool strictChild = attack.StrictChildOf(attack);   // false
 - `StrictChildOf`는 exact match를 제외한 엄격한 하위 계층만 `true`입니다.
 - `IsContains`는 계층 비교가 아니라 문자열 `Contains` 비교입니다.
 
+### 태그 명명 규칙 및 문자 제한
+
+태그 이름은 일관되고 안전한 계층 관리를 위해 다음 규칙을 따릅니다.
+
+- **허용 문자**: 영문 대소문자(`A-Z`, `a-z`), 숫자(`0-9`), 하이픈(`-`), 언더스코어(`_`), 계층 구분자(`.`)
+- **구분자 규칙**: 태그의 맨 앞이나 맨 뒤에 `.`이 올 수 없으며, 연속된 점(`..`)은 허용되지 않습니다.
+- **유효성 검사 및 정제 유틸리티**:
+  - `GameTag.IsValidTagName(string tagName, out string errorReason)`: 문자열이 유효한 형식인지 검증
+  - `GameTag.SanitizeTagName(string tagName)`: 허용되지 않은 문자(공백, 한글, 특수기호 등)를 제거하고 유효한 태그로 자동 정제
+  - `new GameTag(string tagName)` 생성자 호출 시에도 규칙에 맞지 않는 문자는 자동으로 경고 및 정제되어 안전하게 보관됩니다.
+
 ### GameTagContainer
 
 `GameTagContainer`는 태그를 실제로 보유하고 조회하는 컨테이너입니다.
@@ -200,10 +211,11 @@ if (handle.IsValid)
 
 ## 이벤트 및 리스너
 
-`GameTagContainer`는 두 종류의 이벤트를 제공합니다.
+`GameTagContainer`는 다음 세 가지 형태의 이벤트를 제공합니다.
 
 - `OnTagOwnshipChanged`: 태그 보유 수량이 변경될 때 호출
 - `OnTagNotified`: `NotifyTag` 호출 시 전달되는 단발성 이벤트
+- `OnTagNotifiedWithData`: `NotifyTag` 호출 시 전달되는 단발성 이벤트 (자유 페이로드 데이터 포함)
 
 ### C# 이벤트 구독
 
@@ -214,12 +226,14 @@ private void OnEnable()
 {
     m_tagContainer.OnTagOwnshipChanged += HandleTagChanged;
     m_tagContainer.OnTagNotified += HandleTagNotified;
+    m_tagContainer.OnTagNotifiedWithData += HandleTagNotifiedWithData;
 }
 
 private void OnDisable()
 {
     m_tagContainer.OnTagOwnshipChanged -= HandleTagChanged;
     m_tagContainer.OnTagNotified -= HandleTagNotified;
+    m_tagContainer.OnTagNotifiedWithData -= HandleTagNotifiedWithData;
 }
 
 private void HandleTagChanged(GameTagContainer.GameTagOwnshipChangeInfo info)
@@ -230,6 +244,11 @@ private void HandleTagChanged(GameTagContainer.GameTagOwnshipChangeInfo info)
 private void HandleTagNotified(GameTag gameTag)
 {
     Debug.Log($"Tag Notified: {gameTag.TagName}");
+}
+
+private void HandleTagNotifiedWithData(GameTag gameTag, object payload)
+{
+    Debug.Log($"Tag Notified With Data: {gameTag.TagName}, Payload: {payload}");
 }
 ```
 
@@ -257,9 +276,16 @@ public class TagListenerExample : MonoBehaviour, IGameTagListener
         Debug.Log($"Changed: {info.Tag.TagName}");
     }
 
+    // 기본 단발성 알림
     public void OnGameTagNotified(GameTag gameTag)
     {
         Debug.Log($"Notified: {gameTag.TagName}");
+    }
+
+    // 페이로드가 포함된 알림 (선택적 구현 가능, 기본 구현 제공)
+    public void OnGameTagNotified(GameTag gameTag, object payload)
+    {
+        Debug.Log($"Notified: {gameTag.TagName}, Data: {payload}");
     }
 }
 ```
@@ -267,15 +293,21 @@ public class TagListenerExample : MonoBehaviour, IGameTagListener
 ## NotifyTag는 언제 쓰나
 
 `NotifyTag`는 컨테이너의 보유 상태를 바꾸지 않고, 특정 태그 이벤트만 발행하고 싶을 때 사용합니다.
+또한 필요한 경우 임의의 객체나 데이터(`payload`)를 함께 전달할 수 있습니다.
 
 예시:
 
-- `Event.Hit`
-- `Event.PerfectDodge`
+- `Event.Hit` (피격 대미지 정보 전달)
+- `Event.BuffApplied` (버프 추가 정보 전달)
 - `Skill.Cast.Start`
 
 ```csharp
+// 1. 단순 태그 이벤트 발행
 container.NotifyTag(new GameTag("Event.Hit"));
+
+// 2. 임의의 데이터(페이로드)를 함께 전달
+container.NotifyTag(new GameTag("Event.Hit"), new HitData { Damage = 100, Source = player });
+container.NotifyTag<string>(new GameTag("Skill.Cast.Start"), "CastDuration: 1.5s");
 ```
 
 `NotifyTag`는 상태 저장이 아니라 신호 전달용입니다. 따라서 `NotifyTag("Event.Hit")`를 호출해도 `HasExactTag("Event.Hit")`가 true가 되지는 않습니다.
@@ -317,6 +349,58 @@ public static class GameTagEditorBootstrap
     }
 }
 ```
+
+### GameTagOptionAttribute (인스펙터 제어)
+
+필드에 `[GameTagOption]` 어트리뷰트를 붙여 부모 태그를 지정하면, 인스펙터 드롭다운 목록을 해당 부모의 하위 태그로만 제한하고 직접 텍스트 입력 시에도 유효성 검사 및 자동 완성을 지원합니다.
+
+`GameTag` 구조체 필드뿐 아니라 `string` 필드에도 적용할 수 있습니다.
+
+```csharp
+public class CharacterStatus : MonoBehaviour
+{
+    // 1. 기본 부모 하위 태그 필터링 (Status.Buff.A, Status.Buff.B 등 하위 태그만 선택 가능)
+    [GameTagOption(parent = "Status.Buff")]
+    public GameTag buffTag;
+
+    // 2. 부모 태그 자체(Status.Buff)도 선택 항목에 포함
+    [GameTagOption(parent = "Status.Buff", includeParent = true)]
+    public GameTag buffTagWithParent;
+
+    // 3. 직접 타이핑 차단, 오직 드롭다운 팝업으로만 선택 강제 (오타 원천 방지)
+    [GameTagOption(parent = "Status.Buff", dropdownOnly = true)]
+    public GameTag buffTagDropdownOnly;
+
+    // 4. 특정 태그 및 하위 카테고리 제외 (Status.Buff.Debug 및 그 하위 계층 제외)
+    [GameTagOption(parent = "Status.Buff", exclude = "Status.Buff.Debug")]
+    public GameTag buffTagWithoutDebug;
+
+    // 5. 복수 제외 및 드롭다운 전용 복합 적용
+    [GameTagOption(parent = "Status.Buff", exclude = "Status.Buff.Debug, Status.Buff.Internal", dropdownOnly = true)]
+    public GameTag productionBuffTag;
+
+    // 6. string 필드에도 동일하게 적용 가능
+    [GameTagOption(parent = "Status.Buff")]
+    public string buffTagString;
+}
+```
+
+#### 주요 옵션 목록
+
+| 프로퍼티 | 타입 | 기본값 | 설명 |
+| --- | --- | --- | --- |
+| `parent` / `Parent` | `string` | `""` | 필터링 기준이 되는 부모 태그 경로입니다. |
+| `includeParent` / `IncludeParent` | `bool` | `false` | 부모 태그 자체(`Status.Buff`)를 유효 선택/입력 항목으로 포함할지 여부입니다. |
+| `dropdownOnly` / `DropdownOnly` | `bool` | `false` | 직접 텍스트 타이핑을 잠그고 팝업 버튼으로만 선택하도록 강제합니다. |
+| `exclude` / `Exclude` | `string` | `""` | 제외할 태그 또는 하위 접두사입니다. (쉼표로 구분하여 복수 지정 가능) |
+| `excludeTags` / `ExcludeTags` | `string[]` | `[]` | 제외할 태그들의 배열입니다. |
+| `relativePathInMenu` | `bool` | `true` | 드롭다운 메뉴에서 부모 접두사를 생략하고 `A`, `B`처럼 상대 경로로 간결하게 표시합니다. (선택 시 전체 풀네임 적용) |
+| `restrictToParent` | `bool` | `true` | 직접 입력 시 하위 태그명(`A`)만 입력해도 자동으로 `Status.Buff.A`로 완성하며 타 계층 입력을 차단 및 복원합니다. |
+| `allowEmpty` | `bool` | `true` | 빈 태그(`<None>`) 선택 및 입력을 허용합니다. |
+
+#### 인스펙터 기능
+- **자동 완성**: 텍스트 필드에 `"A"`만 입력하고 Enter를 누르면 부모 접두사가 붙은 `"Status.Buff.A"`로 자동 변환됩니다.
+- **오타 및 규칙 위반 감지**: 부모 범위를 벗어난 태그나 허용되지 않은 문자가 포함된 경우 텍스트 필드에 붉은 틴트와 ⚠️ 경고 아이콘/툴팁이 표시되며, 엔터 입력 시 안전하게 이전 값으로 복원하거나 정제합니다.
 
 ## 샘플
 
