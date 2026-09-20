@@ -37,20 +37,38 @@ namespace Sizzle.GameTagSystem.Editor
             Rect btnFiltered = new Rect(position.x + position.width - buttonWidth * 2, position.y, buttonWidth, position.height);
             Rect btnTotal = new Rect(position.x + position.width - buttonWidth, position.y, buttonWidth, position.height);
 
-            EditorGUI.BeginChangeCheck();
-            Color prevColor = GUI.color;
-            if (isInvalid)
-                GUI.color = new Color(1f, 0.75f, 0.75f); // 비정상 값인 경우 붉은 틴트
-
             GUIContent fieldLabel = new GUIContent(label.text, isInvalid ? invalidReason : label.tooltip);
-            string newText = EditorGUI.DelayedTextField(textRect, fieldLabel, currentVal);
-            GUI.color = prevColor;
 
-            if (EditorGUI.EndChangeCheck())
+            if (option != null && option.DropdownOnly)
             {
-                string validated = ValidateAndFormatInput(newText, currentVal, option);
-                valueProperty.stringValue = validated;
-                valueProperty.serializedObject.ApplyModifiedProperties();
+                Color prevColor = GUI.color;
+                if (isInvalid)
+                    GUI.color = new Color(1f, 0.75f, 0.75f);
+
+                Rect contentRect = EditorGUI.PrefixLabel(textRect, fieldLabel);
+                string displayLabel = string.IsNullOrEmpty(currentVal) ? "<None>" : currentVal;
+                if (GUI.Button(contentRect, new GUIContent(displayLabel, isInvalid ? invalidReason : displayLabel), EditorStyles.popup))
+                {
+                    ShowTagMenu(valueProperty, "", option);
+                }
+                GUI.color = prevColor;
+            }
+            else
+            {
+                EditorGUI.BeginChangeCheck();
+                Color prevColor = GUI.color;
+                if (isInvalid)
+                    GUI.color = new Color(1f, 0.75f, 0.75f); // 비정상 값인 경우 붉은 틴트
+
+                string newText = EditorGUI.DelayedTextField(textRect, fieldLabel, currentVal);
+                GUI.color = prevColor;
+
+                if (EditorGUI.EndChangeCheck())
+                {
+                    string validated = ValidateAndFormatInput(newText, currentVal, option);
+                    valueProperty.stringValue = validated;
+                    valueProperty.serializedObject.ApplyModifiedProperties();
+                }
             }
 
             if (isInvalid)

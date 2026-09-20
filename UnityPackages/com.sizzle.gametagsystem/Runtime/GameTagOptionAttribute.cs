@@ -93,6 +93,21 @@ namespace Sizzle.GameTagSystem
         }
 
         /// <summary>
+        /// 텍스트 직접 입력을 제한하고 오직 드롭다운 목록에서만 태그를 선택하도록 강제할지 여부입니다.
+        /// 기본값은 false입니다.
+        /// </summary>
+        public bool DropdownOnly { get; set; } = false;
+
+        /// <summary>
+        /// 소문자 명명 파라미터 지원 프로퍼티
+        /// </summary>
+        public bool dropdownOnly
+        {
+            get => DropdownOnly;
+            set => DropdownOnly = value;
+        }
+
+        /// <summary>
         /// 기본 생성자입니다.
         /// </summary>
         public GameTagOptionAttribute()
