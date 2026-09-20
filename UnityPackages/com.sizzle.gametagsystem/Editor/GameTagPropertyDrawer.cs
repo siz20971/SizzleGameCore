@@ -100,6 +100,13 @@ namespace Sizzle.GameTagSystem.Editor
         private bool IsValidTagValue(string tagName, GameTagOptionAttribute option, out string reason)
         {
             reason = string.Empty;
+
+            if (!GameTag.IsValidTagName(tagName, out string formatError))
+            {
+                reason = formatError;
+                return false;
+            }
+
             if (option == null || string.IsNullOrEmpty(option.Parent))
                 return true;
 
@@ -129,10 +136,18 @@ namespace Sizzle.GameTagSystem.Editor
 
         private static string ValidateAndFormatInput(string input, string oldValue, GameTagOptionAttribute option)
         {
-            if (option == null || string.IsNullOrEmpty(option.Parent))
-                return input != null ? input.Trim() : string.Empty;
-
             input = (input ?? string.Empty).Trim();
+
+            // 유효하지 않은 문자 정제
+            if (!GameTag.IsValidTagName(input, out string formatError))
+            {
+                string sanitized = GameTag.SanitizeTagName(input);
+                Debug.LogWarning($"[GameTag] '{input}'에 허용되지 않은 문자가 포함되어 정제되었습니다 ('{sanitized}'): {formatError}");
+                input = sanitized;
+            }
+
+            if (option == null || string.IsNullOrEmpty(option.Parent))
+                return input;
 
             // 1. 빈 문자열 처리
             if (string.IsNullOrEmpty(input))

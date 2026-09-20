@@ -222,12 +222,124 @@ namespace Sizzle.GameTagSystem
         }
 
         /// <summary>
+        /// GameTag에서 허용되는 단일 문자인지 확인합니다. ([A-Za-z0-9], '-', '_')
+        /// </summary>
+        public static bool IsValidCharacter(char c, bool allowSeparator = true)
+        {
+            if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '-' || c == '_')
+                return true;
+
+            if (allowSeparator && c == SEPARATOR)
+                return true;
+
+            return false;
+        }
+
+        /// <summary>
+        /// 주어진 문자열이 유효한 GameTag 명칭 형식인지 검사합니다.
+        /// 빈 문자열은 유효한 것으로 간주됩니다 (GameTag.Empty).
+        /// </summary>
+        public static bool IsValidTagName(string tagName, out string errorReason)
+        {
+            errorReason = string.Empty;
+
+            if (string.IsNullOrEmpty(tagName))
+                return true;
+
+            if (tagName[0] == SEPARATOR)
+            {
+                errorReason = $"태그 이름은 구분자('{SEPARATOR}')로 시작할 수 없습니다.";
+                return false;
+            }
+
+            if (tagName[tagName.Length - 1] == SEPARATOR)
+            {
+                errorReason = $"태그 이름은 구분자('{SEPARATOR}')로 끝날 수 없습니다.";
+                return false;
+            }
+
+            bool prevWasSeparator = false;
+            for (int i = 0; i < tagName.Length; i++)
+            {
+                char c = tagName[i];
+                if (c == SEPARATOR)
+                {
+                    if (prevWasSeparator)
+                    {
+                        errorReason = $"구분자('{SEPARATOR}')가 연속으로 올 수 없습니다.";
+                        return false;
+                    }
+                    prevWasSeparator = true;
+                }
+                else
+                {
+                    prevWasSeparator = false;
+                    if (!IsValidCharacter(c, allowSeparator: false))
+                    {
+                        errorReason = $"허용되지 않은 문자 '{c}'가 포함되어 있습니다. 태그에는 [A-Za-z0-9], '-', '_'만 사용할 수 있습니다.";
+                        return false;
+                    }
+                }
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// 주어진 문자열에서 허용되지 않은 문자를 제거하고 올바른 GameTag 형식으로 정제합니다.
+        /// </summary>
+        public static string SanitizeTagName(string tagName)
+        {
+            if (string.IsNullOrEmpty(tagName))
+                return string.Empty;
+
+            var sb = new System.Text.StringBuilder(tagName.Length);
+            bool prevWasSeparator = false;
+
+            for (int i = 0; i < tagName.Length; i++)
+            {
+                char c = tagName[i];
+                if (c == SEPARATOR)
+                {
+                    if (sb.Length > 0 && !prevWasSeparator)
+                    {
+                        sb.Append(SEPARATOR);
+                        prevWasSeparator = true;
+                    }
+                }
+                else if (IsValidCharacter(c, allowSeparator: false))
+                {
+                    sb.Append(c);
+                    prevWasSeparator = false;
+                }
+            }
+
+            while (sb.Length > 0 && sb[sb.Length - 1] == SEPARATOR)
+            {
+                sb.Length--;
+            }
+
+            return sb.ToString();
+        }
+
+        /// <summary>
         /// 외부 입력을 내부 비교용 문자열로 정규화합니다.
-        /// 현재는 null만 빈 문자열로 변환합니다.
+        /// 허용되지 않은 문자가 있으면 경고를 출력하고 정제합니다.
         /// </summary>
         private static string Normalize(string tagName)
         {
-            return tagName ?? string.Empty;
+            if (string.IsNullOrEmpty(tagName))
+                return string.Empty;
+
+            if (!IsValidTagName(tagName, out string errorReason))
+            {
+#if UNITY_EDITOR
+                Debug.LogWarning($"[GameTag] '{tagName}' 태그 이름이 규칙에 맞지 않아 정제되었습니다: {errorReason}");
+#endif
+                return SanitizeTagName(tagName);
+            }
+
+            return tagName;
         }
 
         /// <summary>
