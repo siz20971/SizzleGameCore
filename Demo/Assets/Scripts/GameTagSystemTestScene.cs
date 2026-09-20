@@ -7,17 +7,70 @@ using Sizzle.GameTagSystem;
 
 public class GameTagSystemTestScene : MonoBehaviour
 {
+    [Header("Basic GameTag (Character Validation Test)")]
     public GameTag gameTagValue;
 
-    [Header("GameTagOption Test")]
+    [Header("GameTagOption Tests")]
+    [Tooltip("기본 부모 하위 태그 필터링 (하위 태그만 선택 가능)")]
     [GameTagOption(parent = "Status.Buff")]
     public GameTag buffTagValue;
 
+    [Tooltip("부모 자체(Status.Buff)도 포함 허용")]
     [GameTagOption(parent = "Status.Buff", includeParent = true)]
     public GameTag buffTagWithParent;
 
+    [Tooltip("텍스트 편집 잠금, 오직 드롭다운 팝업으로만 선택")]
+    [GameTagOption(parent = "Status.Buff", dropdownOnly = true)]
+    public GameTag buffTagDropdownOnly;
+
+    [Tooltip("Status.Buff.Elemental 하위 카테고리 제외")]
+    [GameTagOption(parent = "Status.Buff", exclude = "Status.Buff.Elemental")]
+    public GameTag buffTagExcludeElemental;
+
+    [Tooltip("제외(Status.Buff.Speed) + 드롭다운 전용 복합 옵션")]
+    [GameTagOption(parent = "Status.Buff", exclude = "Status.Buff.Speed", dropdownOnly = true)]
+    public GameTag buffTagExcludeAndDropdownOnly;
+
+    [Tooltip("string 필드에도 GameTagOption 적용 가능")]
     [GameTagOption(parent = "Status.Buff")]
     public string buffTagStringValue;
+
+    [Serializable]
+    public class CustomTestPayload
+    {
+        public string Sender;
+        public int Number;
+        public override string ToString() => $"Sender={Sender}, Number={Number}";
+    }
+
+    [ContextMenu("Test/Notify Tag With String Data")]
+    public void ContextMenuNotifyTagWithStringData()
+    {
+        EnsureContainer();
+        GameTag tag = new GameTag("Status.Buff.Attack");
+        string payload = "Attack Power +50 Boost!";
+        container.NotifyTag(tag, payload);
+        UnityEngine.Debug.Log($"[ContextMenu] NotifyTag called: {tag} with payload '{payload}'");
+    }
+
+    [ContextMenu("Test/Notify Tag With Custom Object Data")]
+    public void ContextMenuNotifyTagWithObjectData()
+    {
+        EnsureContainer();
+        GameTag tag = new GameTag("Event.Hit");
+        var payload = new CustomTestPayload { Sender = "Hero", Number = 777 };
+        container.NotifyTag(tag, payload);
+        UnityEngine.Debug.Log($"[ContextMenu] NotifyTag called: {tag} with object payload '{payload}'");
+    }
+
+    [ContextMenu("Test/Validate & Sanitize Tag String")]
+    public void ContextMenuValidateAndSanitize()
+    {
+        string raw = "Status.Buff@#$_Fire 123!한글";
+        bool isValid = GameTag.IsValidTagName(raw, out string reason);
+        string sanitized = GameTag.SanitizeTagName(raw);
+        UnityEngine.Debug.Log($"[ContextMenu] Raw: '{raw}' -> IsValid: {isValid} ({reason}) -> Sanitized: '{sanitized}'");
+    }
 
     private int selectedTab = 0;
     private string[] tabNames = new string[] { "GameTag Compare", "GameTagContainer", "Benchmark" };
@@ -42,6 +95,7 @@ public class GameTagSystemTestScene : MonoBehaviour
     private string queryTagName = "Skill.Attack";
     private string timedTagDurationText = "2";
     private float timedTagDuration = 2f;
+    private string notifyPayloadText = "Sample Payload Data";
     
     private List<string> logs = new List<string>();
     private const int maxLogCount = 30;
@@ -84,7 +138,7 @@ public class GameTagSystemTestScene : MonoBehaviour
     {
         EnsureContainer();
         container.OnTagOwnshipChanged += HandleTagOwnshipChanged;
-        container.OnTagNotified += HandleTagNotified;
+        container.OnTagNotifiedWithData += HandleTagNotifiedWithData;
     }
 
     private void OnDisable()
@@ -92,7 +146,7 @@ public class GameTagSystemTestScene : MonoBehaviour
         if (container != null)
         {
             container.OnTagOwnshipChanged -= HandleTagOwnshipChanged;
-            container.OnTagNotified -= HandleTagNotified;
+            container.OnTagNotifiedWithData -= HandleTagNotifiedWithData;
         }
     }
 
@@ -183,10 +237,22 @@ public class GameTagSystemTestScene : MonoBehaviour
 
     private void DrawTab1()
     {
-        GUILayout.Label("--- GameTag Comparison ---", GUI.skin.box);
+        GUILayout.Label("--- GameTag Comparison & Character Validation ---", GUI.skin.box);
         GUILayout.BeginHorizontal();
         GUILayout.Label("Input Tag:", GUILayout.Width(100));
         inputTagString = GUILayout.TextField(inputTagString);
+        GUILayout.EndHorizontal();
+
+        bool isValid = GameTag.IsValidTagName(inputTagString, out string errorReason);
+        string sanitized = GameTag.SanitizeTagName(inputTagString);
+
+        GUILayout.BeginHorizontal();
+        string formatStatus = isValid ? "Format Valid [A-Za-z0-9_.-]" : $"Format Invalid: {errorReason}";
+        GUILayout.Label(formatStatus);
+        if (GUILayout.Button("Sanitize Input", GUILayout.Width(120)))
+        {
+            inputTagString = sanitized;
+        }
         GUILayout.EndHorizontal();
 
         GUILayout.Space(10);
@@ -233,6 +299,14 @@ public class GameTagSystemTestScene : MonoBehaviour
         if (GUILayout.Button("Add Tag")) AddTag(actionTagName);
         if (GUILayout.Button("Remove Tag")) RemoveTag(actionTagName);
         if (GUILayout.Button("Notify Tag")) NotifyTag(actionTagName);
+        GUILayout.EndHorizontal();
+
+        GUILayout.Space(4f);
+        GUILayout.BeginHorizontal();
+        GUILayout.Label("Notify Payload:", GUILayout.Width(100f));
+        notifyPayloadText = GUILayout.TextField(notifyPayloadText ?? string.Empty);
+        if (GUILayout.Button("Notify with Payload", GUILayout.Width(140f)))
+            NotifyTagWithPayload(actionTagName, notifyPayloadText);
         GUILayout.EndHorizontal();
 
         GUILayout.Space(4f);
@@ -423,12 +497,12 @@ public class GameTagSystemTestScene : MonoBehaviour
         if (container != null)
         {
             container.OnTagOwnshipChanged -= HandleTagOwnshipChanged;
-            container.OnTagNotified -= HandleTagNotified;
+            container.OnTagNotifiedWithData -= HandleTagNotifiedWithData;
         }
 
         container = new GameTagContainer();
         container.OnTagOwnshipChanged += HandleTagOwnshipChanged;
-        container.OnTagNotified += HandleTagNotified;
+        container.OnTagNotifiedWithData += HandleTagNotifiedWithData;
         Log("Container reset.");
     }
 
@@ -462,15 +536,25 @@ public class GameTagSystemTestScene : MonoBehaviour
         container.NotifyTag(tag);
     }
 
+    private void NotifyTagWithPayload(string tagName, string payload)
+    {
+        GameTag tag = CreateTagOrEmpty(tagName);
+        if (tag.IsEmpty) { Log("Notify Tag ignored: empty tag."); return; }
+        container.NotifyTag(tag, payload);
+    }
+
     private void HandleTagOwnshipChanged(GameTagContainer.GameTagOwnshipChangeInfo info)
     {
         string action = info.Added ? "Added" : "Removed";
         Log($"{action}: {info.Tag.TagName} (Remains: {info.Remains})");
     }
 
-    private void HandleTagNotified(GameTag gameTag)
+    private void HandleTagNotifiedWithData(GameTag gameTag, object payload)
     {
-        Log($"Notified: {gameTag.TagName}");
+        if (payload != null)
+            Log($"Notified: {gameTag.TagName} | Payload: [{payload}]");
+        else
+            Log($"Notified: {gameTag.TagName}");
     }
 
     private void Log(string message)
