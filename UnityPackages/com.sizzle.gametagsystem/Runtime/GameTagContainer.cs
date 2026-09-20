@@ -21,6 +21,12 @@ namespace Sizzle.GameTagSystem
         /// 소유 여부와 무관한 단발성 notify 신호입니다.
         /// </summary>
         void OnGameTagNotified(GameTag gameTag);
+
+        /// <summary>
+        /// 데이터(페이로드)가 포함된 태그 알림 이벤트가 발생했을 때 호출됩니다.
+        /// 기본 구현은 기존 OnGameTagNotified(gameTag)를 호출하도록 되어 있어 하위 호환성을 유지합니다.
+        /// </summary>
+        void OnGameTagNotified(GameTag gameTag, object payload) => OnGameTagNotified(gameTag);
     }
 
     [Serializable]
@@ -35,6 +41,7 @@ namespace Sizzle.GameTagSystem
 
         public delegate void GameTagOwnshipChangedHandler(GameTagOwnshipChangeInfo info);
         public delegate void GameTagNotifiedHandler(GameTag gameTag);
+        public delegate void GameTagNotifiedWithDataHandler(GameTag gameTag, object payload);
 
         private Dictionary<GameTag, int> m_ownTagCounts = new Dictionary<GameTag, int>();
 
@@ -64,6 +71,7 @@ namespace Sizzle.GameTagSystem
 
         public event GameTagOwnshipChangedHandler OnTagOwnshipChanged = null;
         public event GameTagNotifiedHandler OnTagNotified = null;
+        public event GameTagNotifiedWithDataHandler OnTagNotifiedWithData = null;
 
         private List<IGameTagListener> m_gameTagListeners = new List<IGameTagListener>();
         private IGameTagListener[] m_gameTagListenersCache = Array.Empty<IGameTagListener>();
@@ -192,19 +200,28 @@ namespace Sizzle.GameTagSystem
         }
 
         /// <summary>
-        /// 태그 알림 이벤트를 발행합니다.
+        /// 태그 알림 이벤트를 발행합니다. 선택적으로 자유로운 데이터(payload)를 함께 전달할 수 있습니다.
         /// 소유 상태는 변경하지 않고 notify 이벤트와 리스너 콜백만 호출합니다.
         /// </summary>
-        public void NotifyTag(GameTag tag)
+        public void NotifyTag(GameTag tag, object payload = null)
         {
             if (tag.IsEmpty)
                 return;
 
             OnTagNotified?.Invoke(tag);
-            NotifyTagListeners(tag);
+            OnTagNotifiedWithData?.Invoke(tag, payload);
+            NotifyTagListeners(tag, payload);
         }
 
-        private void NotifyTagListeners(GameTag tag)
+        /// <summary>
+        /// 태그 알림 이벤트를 발행합니다. 제네릭 타입의 데이터(payload)를 함께 전달할 수 있습니다.
+        /// </summary>
+        public void NotifyTag<T>(GameTag tag, T payload)
+        {
+            NotifyTag(tag, (object)payload);
+        }
+
+        private void NotifyTagListeners(GameTag tag, object payload)
         {
             if (m_gameTagListeners.Count == 0)
                 return;
@@ -216,7 +233,7 @@ namespace Sizzle.GameTagSystem
             }
 
             for (int i = 0; i < m_gameTagListenersCache.Length; i++)
-                m_gameTagListenersCache[i]?.OnGameTagNotified(tag);
+                m_gameTagListenersCache[i]?.OnGameTagNotified(tag, payload);
         }
 
         /// <summary>
