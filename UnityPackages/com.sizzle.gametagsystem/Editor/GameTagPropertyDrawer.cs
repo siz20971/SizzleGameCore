@@ -149,6 +149,12 @@ namespace Sizzle.GameTagSystem.Editor
                 return false;
             }
 
+            if (option.IsExcluded(tagName))
+            {
+                reason = $"'{tagName}'은(는) 제외 목록({option.Exclude})에 포함된 태그입니다.";
+                return false;
+            }
+
             return true;
         }
 
@@ -191,12 +197,22 @@ namespace Sizzle.GameTagSystem.Editor
             GameTag tag = new GameTag(input);
             if (tag.StrictChildOf(option.Parent))
             {
+                if (option.IsExcluded(tag))
+                {
+                    Debug.LogWarning($"[GameTagOption] '{input}'은(는) 제외 목록({option.Exclude})에 포함된 태그이므로 지정할 수 없습니다. 이전 값('{oldValue}')으로 복원합니다.");
+                    return oldValue;
+                }
                 return input;
             }
 
             // 4. 부모로 시작하지 않는 경우 -> 부모 강제 제한 여부 확인
             if (!option.RestrictToParent)
             {
+                if (option.IsExcluded(tag))
+                {
+                    Debug.LogWarning($"[GameTagOption] '{input}'은(는) 제외 목록({option.Exclude})에 포함된 태그이므로 지정할 수 없습니다. 이전 값('{oldValue}')으로 복원합니다.");
+                    return oldValue;
+                }
                 return input;
             }
 
@@ -220,6 +236,12 @@ namespace Sizzle.GameTagSystem.Editor
             else
             {
                 combined = $"{option.Parent}.{input.TrimStart(GameTag.SEPARATOR)}";
+            }
+
+            if (option.IsExcluded(combined))
+            {
+                Debug.LogWarning($"[GameTagOption] '{combined}'은(는) 제외 목록({option.Exclude})에 포함된 태그이므로 지정할 수 없습니다. 이전 값('{oldValue}')으로 복원합니다.");
+                return oldValue;
             }
 
             return combined;
@@ -251,6 +273,11 @@ namespace Sizzle.GameTagSystem.Editor
             {
                 candidateQuery = candidateQuery.Where(t =>
                     includeParent ? t.ChildOfOrExact(parent) : t.StrictChildOf(parent));
+            }
+
+            if (option != null && option.ExcludeTags != null && option.ExcludeTags.Length > 0)
+            {
+                candidateQuery = candidateQuery.Where(t => !option.IsExcluded(t));
             }
 
             List<GameTag> targetTags = candidateQuery.OrderBy(t => t.TagName).ToList();

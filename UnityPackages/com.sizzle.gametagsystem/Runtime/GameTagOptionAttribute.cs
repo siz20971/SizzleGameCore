@@ -107,6 +107,86 @@ namespace Sizzle.GameTagSystem
             set => DropdownOnly = value;
         }
 
+        private string[] m_excludeTags = Array.Empty<string>();
+
+        /// <summary>
+        /// 드롭다운 목록 및 유효 입력에서 제외할 태그 또는 하위 카테고리 목록입니다.
+        /// 지정된 태그 및 그 하위 계층 태그들이 모두 제외됩니다.
+        /// </summary>
+        public string[] ExcludeTags
+        {
+            get => m_excludeTags;
+            set => m_excludeTags = value ?? Array.Empty<string>();
+        }
+
+        /// <summary>
+        /// 소문자 명명 파라미터 지원 프로퍼티 (예: excludeTags = new[] { "Status.Buff.Debug" })
+        /// </summary>
+        public string[] excludeTags
+        {
+            get => ExcludeTags;
+            set => ExcludeTags = value;
+        }
+
+        /// <summary>
+        /// 제외할 단일 태그(또는 쉼표로 구분된 태그 목록)를 지정하는 편의 프로퍼티입니다. (예: exclude = "Status.Buff.Debug")
+        /// </summary>
+        public string Exclude
+        {
+            get => m_excludeTags != null && m_excludeTags.Length > 0 ? string.Join(", ", m_excludeTags) : string.Empty;
+            set
+            {
+                if (string.IsNullOrEmpty(value))
+                {
+                    m_excludeTags = Array.Empty<string>();
+                }
+                else
+                {
+                    m_excludeTags = value.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries);
+                    for (int i = 0; i < m_excludeTags.Length; i++)
+                        m_excludeTags[i] = m_excludeTags[i].Trim();
+                }
+            }
+        }
+
+        /// <summary>
+        /// 소문자 명명 파라미터 지원 프로퍼티 (예: [GameTagOption(parent="Status.Buff", exclude="Status.Buff.Debug")])
+        /// </summary>
+        public string exclude
+        {
+            get => Exclude;
+            set => Exclude = value;
+        }
+
+        /// <summary>
+        /// 대상 태그가 제외 목록(ExcludeTags)에 해당하거나 그 하위 태그인지 확인합니다.
+        /// </summary>
+        public bool IsExcluded(GameTag tag)
+        {
+            if (m_excludeTags == null || m_excludeTags.Length == 0 || tag.IsEmpty)
+                return false;
+
+            for (int i = 0; i < m_excludeTags.Length; i++)
+            {
+                string exc = m_excludeTags[i];
+                if (!string.IsNullOrEmpty(exc) && tag.ChildOfOrExact(exc))
+                    return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// 대상 태그 문자열이 제외 목록(ExcludeTags)에 해당하거나 그 하위 태그인지 확인합니다.
+        /// </summary>
+        public bool IsExcluded(string tagName)
+        {
+            if (string.IsNullOrEmpty(tagName))
+                return false;
+
+            return IsExcluded(new GameTag(tagName));
+        }
+
         /// <summary>
         /// 기본 생성자입니다.
         /// </summary>
@@ -122,6 +202,17 @@ namespace Sizzle.GameTagSystem
         public GameTagOptionAttribute(string parent)
         {
             m_parent = parent ?? string.Empty;
+        }
+
+        /// <summary>
+        /// 부모 태그와 제외 태그를 함께 지정하는 생성자입니다.
+        /// </summary>
+        /// <param name="parent">기준 부모 태그 경로</param>
+        /// <param name="exclude">제외할 태그 또는 하위 접두사</param>
+        public GameTagOptionAttribute(string parent, string exclude)
+        {
+            m_parent = parent ?? string.Empty;
+            Exclude = exclude;
         }
     }
 }
