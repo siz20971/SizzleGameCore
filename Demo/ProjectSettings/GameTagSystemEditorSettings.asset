@@ -12,4 +12,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 51c4f486b7ac1114aa185733a351469e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Sizzle.GameTagSystem.Editor::Sizzle.GameTagSystem.Editor.GameTagSystemEditorSettings
-  m_hierarchyDepth: 0
+  m_hierarchyDepth: -1
