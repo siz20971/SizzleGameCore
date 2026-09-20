@@ -9,6 +9,16 @@ public class GameTagSystemTestScene : MonoBehaviour
 {
     public GameTag gameTagValue;
 
+    [Header("GameTagOption Test")]
+    [GameTagOption(parent = "Status.Buff")]
+    public GameTag buffTagValue;
+
+    [GameTagOption(parent = "Status.Buff", includeParent = true)]
+    public GameTag buffTagWithParent;
+
+    [GameTagOption(parent = "Status.Buff")]
+    public string buffTagStringValue;
+
     private int selectedTab = 0;
     private string[] tabNames = new string[] { "GameTag Compare", "GameTagContainer", "Benchmark" };
 

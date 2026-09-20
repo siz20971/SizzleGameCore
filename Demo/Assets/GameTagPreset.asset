@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ef1622c0108b2ca4dba3ef7a25712116, type: 3}
+  m_Name: GameTagPreset
+  m_EditorClassIdentifier: Sizzle.GameTagSystem::Sizzle.GameTagSystem.GameTagPreset
+  m_tags:
+  - m_tagName: Test.ASf.SDG
+  - m_tagName: Status.Buff
+  - m_tagName: Status.Buff.Attack
+  - m_tagName: Status.Buff.Defense
+  - m_tagName: Status.Buff.Speed
+  - m_tagName: Status.Buff.Elemental.Fire
+  - m_tagName: Status.Buff.Elemental.Ice
+  - m_tagName: Status.Debuff.Stun
+  - m_tagName: Skill.Attack.Slash
