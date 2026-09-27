@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.12 - 2026-09-27
+### 버그 수정 및 안정화
+- **`AbilityAction.DeepClone` 네이티브 객체 크래시 해결**:
+  - `AnimationCurve`, `Gradient` 등 `UnityEngine.Object`를 상속받지 않으면서 내부적으로 C++ 네이티브 포인터(`m_Ptr`)를 보유한 Unity 래퍼 객체가 리플렉션으로 필드 단위 복사될 때 발생하던 네이티브 메모리 이중 해제 및 크래시(`Evaluate_Injected`) 버그 수정.
+  - `AnimationCurve`는 키프레임 및 랩 모드를 안전하게 재생성하여 복제하도록 전용 처리 추가.
+  - `Gradient`는 컬러/알파 키 및 모드를 보존하며 안전하게 복제하도록 전용 처리 추가.
+  - 모든 리플렉션 복제 루프에서 `IntPtr` 및 `UIntPtr` 네이티브 포인터 필드를 직접 복사하지 않도록 예외 처리.
+
 ## 0.1.11 - 2026-09-27
 ### 신규 기능
 - **모듈형 액션 시퀀스 (`ActionSequence`)**:

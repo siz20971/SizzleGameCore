@@ -162,6 +162,27 @@ namespace Sizzle.AbilitySystem.Actions
                 return source;
             }
 
+            // 2.5 UnityEngine의 네이티브 래퍼 타입 (AnimationCurve, Gradient 등) 안전 처리
+            if (source is AnimationCurve curve)
+            {
+                var newCurve = new AnimationCurve(curve.keys)
+                {
+                    preWrapMode = curve.preWrapMode,
+                    postWrapMode = curve.postWrapMode
+                };
+                visited[source] = newCurve;
+                return newCurve;
+            }
+
+            if (source is Gradient gradient)
+            {
+                var newGrad = new Gradient();
+                newGrad.SetKeys(gradient.colorKeys, gradient.alphaKeys);
+                newGrad.mode = gradient.mode;
+                visited[source] = newGrad;
+                return newGrad;
+            }
+
             // 3. 순환 참조 및 중복 복제 방지
             if (visited.TryGetValue(source, out var existing))
             {
@@ -208,6 +229,12 @@ namespace Sizzle.AbilitySystem.Actions
                 {
                     // 델리게이트/이벤트는 복제하지 않음 (이벤트 핸들러 간섭 방지)
                     if (typeof(Delegate).IsAssignableFrom(field.FieldType))
+                    {
+                        continue;
+                    }
+
+                    // IntPtr / UIntPtr 네이티브 포인터 필드는 절대 직접 복사하지 않음 (이중 해제 및 크래시 방지)
+                    if (field.FieldType == typeof(IntPtr) || field.FieldType == typeof(UIntPtr))
                     {
                         continue;
                     }
