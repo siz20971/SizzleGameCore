@@ -1,5 +1,39 @@
 # Changelog
 
+## 0.1.11 - 2026-09-27
+### 신규 기능
+- **모듈형 액션 시퀀스 (`ActionSequence`)**:
+  - 특정 어빌리티 베이스 클래스 상속 여부와 무관하게 모든 어빌리티(`Ability<TContext>`)에서 필드로 선언하여 사용할 수 있는 `ActionSequence` 런타임 엔진 추가.
+  - 실행 인스턴스 격리(`ActionSequence.Instance`), 런타임 제어 및 완료/취소 수명주기 캡슐화.
+  - 다중 분기 시퀀스를 위한 `NamedActionSequence` 및 독립 ScriptableObject 애셋 저장을 위한 `ActionSequenceAsset` 추가.
+- **단위 액션 아키텍처 (`AbilityAction`)**:
+  - `AbilityRuntimeContext` 및 `GameObject`와 상호작용하는 단위 액션 추상 베이스 클래스 `AbilityAction` 추가.
+  - 지연 실행(`Delay`), 단발/지속 실행 수명주기(`OnStart`, `OnUpdate`, `OnCleanup`) 내장 지원.
+  - 리플렉션/JSON 기반 깊은 복사(`Clone()`) 헬퍼 내장으로 에디터 및 런타임 복제 시 SerializeReference 참조 공유 문제 해결.
+  - 기본 내장 액션 제공:
+    - `WaitDelayAction`: 범용 시간 대기/지연 액션.
+    - `DebugLogAction`: 콘솔 로그 출력 액션.
+    - `TimedGameTagAction`: GameTagContainer에 일정 시간 유지되는 태그 추가(`AddTagTimed`) 액션.
+    - `NotifyGameTagAction`: GameTagContainer에 태그 알림(`NotifyTag`) 발행 액션.
+    - `GameTagAction`: GameTagContainer에 태그 추가(`Add`) 또는 제거(`Remove`)를 선택 가능한 액션.
+- **컴포지션 어빌리티 (`ActionCompositionAbility`)**:
+  - 순수 데이터/인스펙터 조작만으로 액션 시퀀스를 구성해 발동할 수 있는 기본 제공 어빌리티 추가.
+
+### 에디터 도구
+- **`ActionSequencePropertyDrawer`**:
+  - 인스펙터 상에서 시퀀스 요약(액션 개수, 총 지속 시간)을 표시하고 `[⚡ Edit Flow]` 버튼으로 전용 에디터 창을 호출하는 커스텀 Drawer 제공.
+- **UI Toolkit 기반 `ActionSequenceFlowWindow`**:
+  - 가로 타임라인/노드 플로우 스타일의 시각적 액션 편집기 제공 (`Window > Sizzle > Ability System > Action Sequence Flow`).
+  - 단일 및 다중 분기 시퀀스(`InitialSequence`, `SuccessBranch`, `FailureBranch` 등) 자동 감지 및 상단 탭 전환 지원.
+  - 툴바 슬라이더를 통한 액션 편집 카드 너비(Width) 실시간 조절 지원.
+  - 각 액션 카드 헤더에서 구현 C# 스크립트 파일 바로 열기(`[Open Script]`) 버튼 지원.
+  - SerializeReference 깊은 복사(Deep Clone)를 지원하는 복제(`Duplicate`) 기능.
+  - 타입 검색 팝업(`AdvancedDropdown`)을 통한 신규 액션 추가 기능.
+
+### 샘플
+- `Samples/ActionSequence`:
+  - `SampleBranchingSequenceAbility`: 선행 시퀀스 완료 후 조건에 따라 성공/실패 시퀀스로 분기하는 다중 시퀀스 어빌리티 예제.
+
 ## 0.1.10 - 2026-09-14
 ### 버그 수정
 - `AbilityGameTagCodeGenerator`가 커스텀 클래스를 생성할 때 `[GameTagPreset]` 어트리뷰트를 중복으로 추가하여 컴파일 에러가 발생하던 문제 수정.

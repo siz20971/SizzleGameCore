@@ -73,6 +73,18 @@
 - `ActivationBlockedTags`: 하나라도 있으면 실행을 막는 태그
 - `TriggerTag`: `NotifyTag`로 들어오면 실행되는 트리거 태그
 
+### ActionSequence & AbilityAction (모듈형 액션 시퀀스)
+
+`ActionSequence`는 어빌리티 내부에서 순차적으로 실행되는 단위 액션(`AbilityAction`)들의 흐름을 캡슐화한 경량 실행 엔진입니다.
+
+특정 어빌리티 클래스를 강제로 상속할 필요 없이, 기존 프로젝트 고유의 어빌리티 베이스 클래스(쿨다운, 마나, 사거리 등)에 `[SerializeField] private ActionSequence m_sequence = new ActionSequence();` 형태로 필드로 합성(Composition)하여 자유롭게 사용할 수 있습니다.
+
+- `AbilityAction`: 단위 액션 추상 베이스 클래스 (`OnStart`, `OnUpdate`, `OnCleanup`, `Delay`, `Clone()`)
+- `ActionSequence`: 단위 액션 목록 및 실행 상태를 격리 관리하는 실행 엔진 (`CreateInstance(context)`)
+- `ActionCompositionAbility`: 코드 작성 없이 인스펙터 및 플로우 에디터만으로 시퀀스를 구성하는 기본 비제네릭 어빌리티
+- `ActionSequenceAsset`: 여러 어빌리티에서 공용으로 재사용할 수 있는 독립 ScriptableObject 애셋
+- `NamedActionSequence`: 다중 분기 시퀀스를 이름과 함께 다루는 데이터 구조
+
 ## 빠른 시작
 
 ### 1. AbilityProcessor 배치
@@ -304,9 +316,157 @@ public class AimAbility : Ability<AimContext, AimPayload>
 }
 ```
 
+## 모듈형 액션 시퀀스 (ActionSequence & AbilityAction)
+
+`ActionSequence`는 어빌리티를 단계별 실행 단위(Action)들의 흐름으로 조립할 수 있게 해주는 경량 모듈입니다.
+
+기존 어빌리티 시스템의 상속 계층(`EntityAbilityBase`, `PlayerAbility`, `BossAbility` 등)을 깨뜨리지 않고, 원하는 어빌리티 클래스 안에 **`[SerializeField] private ActionSequence m_sequence = new ActionSequence();`** 필드만 추가하면 즉시 사용할 수 있습니다.
+
+### 1. 단일 시퀀스 활용 (합성 패턴)
+
+프로젝트 고유의 쿨다운/마나/사거리 등의 스펙을 가진 어빌리티 클래스에서 시퀀스를 합성하여 구동하는 기본 패턴입니다.
+
+```csharp
+using Sizzle.AbilitySystem;
+using Sizzle.AbilitySystem.Actions;
+using UnityEngine;
+
+[CreateAbilityAssetMenu("Combat/Slash Attack")]
+public class SlashAttackAbility : Ability<SlashAttackAbility.RuntimeContext>
+{
+    public class RuntimeContext : AbilityRuntimeContext
+    {
+        public ActionSequence.Instance ActiveSequence;
+
+        protected override void OnReset()
+        {
+            base.OnReset();
+            ActiveSequence = null;
+        }
+    }
+
+    [Header("Sequence")]
+    [SerializeField] private ActionSequence m_sequence = new ActionSequence();
+
+    protected override void OnActivate(RuntimeContext context, AbilityActivatePayload payload)
+    {
+        // 시퀀스 실행 인스턴스 생성 (컨텍스트 바인딩)
+        context.ActiveSequence = m_sequence.CreateInstance(context);
+        
+        // 수명주기 이벤트 연결
+        context.ActiveSequence.OnCompleted += () => context.RequestComplete();
+        context.ActiveSequence.OnCanceled += () => context.RequestCancel();
+        
+        // 시퀀스 시작
+        context.ActiveSequence.Start();
+    }
+
+    protected override void OnUpdateTick(float deltaTime, RuntimeContext context)
+    {
+        context.ActiveSequence?.Update(deltaTime);
+    }
+
+    protected override void OnDeactivate(AbilityEndReason endReason, RuntimeContext context)
+    {
+        context.ActiveSequence?.Cancel();
+        context.ActiveSequence = null;
+    }
+}
+```
+
+### 2. 커스텀 AbilityAction 구현
+
+단위 액션은 `AbilityAction`을 상속받아 필요한 로직을 오버라이드합니다.
+
+```csharp
+using System;
+using Sizzle.AbilitySystem;
+using Sizzle.AbilitySystem.Actions;
+using UnityEngine;
+
+[Serializable]
+public class PlayAnimationAction : AbilityAction
+{
+    [SerializeField] private string m_animStateName = "Attack";
+    [SerializeField] private float m_duration = 0.5f;
+
+    // 액션이 시작될 때 호출 (지연 대기 Delay 이후)
+    protected override void OnStart(AbilityRuntimeContext context)
+    {
+        var animator = GameObject?.GetComponentInChildren<Animator>();
+        animator?.Play(m_animStateName);
+
+        if (m_duration <= 0f)
+            Complete();
+    }
+
+    // 액션이 실행 중일 때 매 프레임 호출
+    protected override void OnUpdate(float deltaTime)
+    {
+        if (ElapsedTime >= m_duration)
+            Complete();
+    }
+
+    // 액션이 정상 완료되거나 중도 취소될 때 항상 호출
+    protected override void OnCleanup()
+    {
+    }
+}
+```
+
+- **`Delay`**: 액션이 큐에서 차례가 되었을 때, 실제 `OnStart`가 호출되기 전 대기하는 시간(초).
+- **`Complete()`**: 액션이 완료되었음을 알려 다음 액션으로 진행시킵니다.
+- **`Cancel()`**: 액션을 취소하고 시퀀스 전체를 중단합니다.
+- **`Clone()`**: 리플렉션 및 JSON 직렬화 기반 딥클론 기능이 내장되어 있어, 에디터 및 런타임 복제 시 `[SerializeReference]`로 인한 객체 참조 공유 문제가 발생하지 않습니다.
+
+### 3. 기본 제공 내장 액션 (Built-in Actions)
+
+- `WaitDelayAction`: 설정된 시간(`Duration`) 동안 대기하는 범용 지연 액션.
+- `DebugLogAction`: 설정된 메시지와 로그 레벨(Info, Warning, Error)을 콘솔에 출력하는 액션.
+- `TimedGameTagAction`: 실행 시 `GameTagContainer`에 일정 시간(`Duration`) 유지되는 태그를 추가(`AddTagTimed`)하는 액션.
+- `NotifyGameTagAction`: 실행 시 `GameTagContainer`를 통해 태그 알림(`NotifyTag`)을 발행하는 액션.
+- `GameTagAction`: 실행 시 `GameTagContainer`에 태그를 추가(`Add`)하거나 제거(`Remove`)하는 선택형 액션.
+
+### 4. 조건부 다중 분기 시퀀스 (Branching Sequences)
+
+선행 시퀀스 실행 후 조건(예: 타격 성공 여부, 카운터 여부 등)에 따라 서로 다른 후속 시퀀스를 실행할 수 있습니다.
+
+```csharp
+[SerializeField] private ActionSequence m_initialSequence = new ActionSequence();
+[SerializeField] private ActionSequence m_successBranch = new ActionSequence();
+[SerializeField] private ActionSequence m_failureBranch = new ActionSequence();
+```
+
+- 인스펙터에서 각 시퀀스마다 `[⚡ Edit Flow]` 버튼이 제공됩니다.
+- `ActionSequenceFlowWindow` 에디터 창 상단에 분기 시퀀스 목록 탭이 자동 생성되어 손쉽게 전환하며 편집할 수 있습니다.
+- 자세한 구현은 `Samples/ActionSequence/SampleBranchingSequenceAbility.cs`를 참조하세요.
+
+### 5. ActionCompositionAbility & ActionSequenceAsset
+
+- **`ActionCompositionAbility`**: C# 스크립트 작성 없이 인스펙터 및 플로우 에디터만으로 순수 데이터 시퀀스를 구성해 등록/발동할 수 있는 기본 제공 어빌리티입니다.
+- **`ActionSequenceAsset`**: 시퀀스 데이터를 독립된 `ScriptableObject` 애셋으로 저장하여 여러 어빌리티나 시스템에서 재사용할 수 있습니다.
+
 ## 디버깅과 에디터 툴
 
 패키지는 아래 에디터 도구를 제공합니다.
+
+### Action Sequence Flow Window
+
+메뉴:
+
+- `Sizzle/Ability System/Action Sequence Flow Editor`
+- `Tools/Sizzle/AbilitySystem/Action Sequence Flow Editor`
+- `Window/Ability System/Action Sequence Flow Editor`
+- 또는 인스펙터의 `ActionSequence` 필드에 있는 `[⚡ Edit Flow]` 버튼 클릭
+
+기능:
+
+- 가로 타임라인/노드 플로우 스타일의 시각적 액션 편집
+- 단일 및 다중 분기 시퀀스(`InitialSequence`, `SuccessBranch` 등) 자동 감지 및 상단 탭 전환
+- 툴바 슬라이더를 통한 액션 편집 카드 너비(Width) 실시간 조절
+- 각 액션 카드 상단에서 구현 C# 스크립트 파일 바로 열기(`[Open Script]`)
+- SerializeReference 깊은 복사(Deep Clone)를 지원하는 복제(`Duplicate`) 기능
+- 프로젝트 내 정의된 `AbilityAction` 타입을 검색하여 즉시 추가하는 드롭다운 팝업
 
 ### Ability Debugger
 
@@ -392,16 +552,23 @@ public class DashAbility : Ability<DashContext>
 
 ## 샘플
 
-패키지에는 샘플 씬이 포함되어 있습니다.
+패키지에는 아래의 샘플들이 포함되어 있습니다.
+
+### 1. Demo Scene
 
 - 샘플 경로: `Samples/DemoScene`
+- 샘플 내용:
+  - `AbilityProcessor`를 통한 어빌리티 실행
+  - 태그 기반 실행 조건
+  - `NotifyTag` 기반 트리거 실행
+  - 에디터 디버거와 태그 가시화 도구 사용
 
-샘플에서는 다음 흐름을 확인할 수 있습니다.
+### 2. Action Sequence Samples
 
-- `AbilityProcessor`를 통한 어빌리티 실행
-- 태그 기반 실행 조건
-- `NotifyTag` 기반 트리거 실행
-- 에디터 디버거와 태그 가시화 도구 사용
+- 샘플 경로: `Samples/ActionSequence`
+- 샘플 내용:
+  - `SampleBranchingSequenceAbility`: 선행 시퀀스 실행 후 조건에 따라 분기(Success/Failure)하는 다중 시퀀스 어빌리티 예제
+  - `ActionSequenceFlowWindow`를 통한 시각적 플로우 편집 및 탭 전환 확인
 
 ## 주의할 점
 
@@ -413,10 +580,11 @@ public class DashAbility : Ability<DashContext>
 
 ## 요약
 
-이 패키지는 다음 두 축으로 이해하면 됩니다.
+이 패키지는 다음 세 축으로 이해하면 됩니다.
 
 - `Ability`: ScriptableObject로 정의하는 실행 로직
 - `AbilityRuntimeContext`: 공통 실행 상태와 개별 구조체(State) 및 멤버 변수(Cache)를 보관하는 런타임 컨텍스트
+- `ActionSequence` & `AbilityAction`: 어빌리티 로직을 단계별 단위 액션으로 분할하고 조립할 수 있는 모듈형 시퀀스 엔진
 - `AbilityProcessor`: 태그 조건, 실행 상태, 갱신 루프를 관리하는 런타임 실행기
 
-`GameTagSystem`과 함께 사용하면 상태 기반 실행 제어, 계층 스킬 분기, 트리거 이벤트, 재실행 정책을 비교적 단순한 구조로 다룰 수 있습니다.
+`GameTagSystem`과 함께 사용하면 상태 기반 실행 제어, 계층 스킬 분기, 트리거 이벤트, 재실행 정책 및 단계별 액션 시퀀스를 단순하고 유연한 구조로 다룰 수 있습니다.

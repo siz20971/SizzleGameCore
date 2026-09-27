@@ -1,7 +1,7 @@
 {
   "name": "com.sizzle.abilitysystem",
   "displayName": "Sizzle Ability System",
-  "version": "0.1.10",
+  "version": "0.1.11",
   "unity": "6000.3",
   "description": "A ScriptableObject-based ability system for Unity built on hierarchical gameplay tags, activation rules, reactivation policies, and editor tooling.",
   "documentationUrl": "https://github.com/siz20971/SizzleGameCore/tree/main/UnityPackages/com.sizzle.abilitysystem",
@@ -22,6 +22,11 @@
       "displayName": "Demo Scene",
       "description": "Sample scene for driving AbilityProcessor, tag-triggered activations, and editor-side ability debugging.",
       "path": "Samples/DemoScene"
+    },
+    {
+      "displayName": "Action Sequence Samples",
+      "description": "Sample scripts demonstrating ActionSequence composition, branching flows, and custom AbilityAction creation.",
+      "path": "Samples/ActionSequence"
     }
   ],
   "author": {
