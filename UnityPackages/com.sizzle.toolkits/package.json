@@ -1,0 +1,40 @@
+{
+  "name": "com.sizzle.toolkits",
+  "displayName": "Sizzle Toolkits",
+  "version": "0.1.0",
+  "unity": "6000.3",
+  "description": "A comprehensive gameplay foundation toolkit for Unity including UI, Input, StateMachine, EventBus, Math, Transitions, and diagnostics utilities.",
+  "documentationUrl": "https://github.com/siz20971/SizzleGameCore/tree/main/UnityPackages/com.sizzle.toolkits",
+  "changelogUrl": "https://github.com/siz20971/SizzleGameCore/tree/main/UnityPackages/com.sizzle.toolkits/CHANGELOG.md",
+  "keywords": [
+    "toolkit",
+    "ui",
+    "statemachine",
+    "input",
+    "eventbus",
+    "transition",
+    "utility"
+  ],
+  "category": "Utilities",
+  "samples": [
+    {
+      "displayName": "UI Samples",
+      "description": "RecycledScrollView and UI component sample scenes and scripts.",
+      "path": "Samples/UI"
+    },
+    {
+      "displayName": "Transitions Samples",
+      "description": "Screen transition shaders and playback sample scenes.",
+      "path": "Samples/Transitions"
+    },
+    {
+      "displayName": "StateMachine Samples",
+      "description": "Hierarchical state machine implementation samples.",
+      "path": "Samples/StateMachine"
+    }
+  ],
+  "author": {
+    "name": "Kyoungsoo Nam",
+    "url": "https://github.com/siz20971/SizzleGameCore"
+  }
+}
