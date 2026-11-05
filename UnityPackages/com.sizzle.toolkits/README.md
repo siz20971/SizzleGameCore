@@ -59,7 +59,7 @@ Unity 6 기반의 경량, 고성능, 모듈형 게임 개발 툴킷 프레임워
 | **UI** | `Sizzle.Toolkits.UI` | `RecycledScrollView<TData, TCell>`, `RecycledScrollCell<TData>` | 대량 데이터 가상화 재사용 스크롤뷰 (수직/수평, 다단 컬럼, 대각선 시프트, 중앙 감지) | [이동](#412-ui-페이더-롤링-카운터-화면-클램핑-가상-조이스틱-타이프라이터) |
 | **UI** | `Sizzle.Toolkits.UI` | `VirtualJoystick`, `DualFollowSlider`, `WorldSpaceUIFollower` | 모바일 가상 조이스틱, 체력바 완충 지연 잔상 슬라이더, 월드 타깃 추적 UI | [이동](#412-ui-페이더-롤링-카운터-화면-클램핑-가상-조이스틱-타이프라이터) |
 | **Animations** | `Sizzle.Toolkits.Animations` | `SimpleSpriteAnimation` | 무거운 Animator 없이 Sprite 배열을 순차 재생하는 경량 컴포넌트 | [이동](#41-animations-스프라이트-애니메이션) |
-| **Data** | `Sizzle.Toolkits.Data` | `DataTable<TKey, TData>`, `CSVTableParser<TData>`, `JSONTableParser<TData>` | RFC 4180 호환 CSV/JSON 파서 및 $O(1)$ 기본키 룩업/LINQ 쿼리 데이터 테이블 | [이동](#43-data-csvjson-파서-및-고속-데이터-테이블) |
+| **Data** | `Sizzle.Toolkits.Data` | `CSVParser`, `CSVColumnAttribute`, `CSVParseConfig`, `CSVParseResult<TData>`, `DataTable<TKey, TData>`, `JSONTableParser<TData>` | RFC 4180 호환 CSV 파서, [CSVColumn] 어트리뷰트 바인딩, CSVParseConfig 설정 객체 및 $O(1)$ 기본키 데이터 테이블 | [이동](#43-data-csvjson-파서-및-고속-데이터-테이블) |
 | **Diagnostics** | `Sizzle.Toolkits.Diagnostics` | `Logger`, `PerformanceMonitor`, `DebugExtensions`, `DebugHelper`, `GizmosEx` | 심각도 로거, 온스크린 실시간 FPS/메모리 모니터링, 박스/원/부채꼴/화살표 디버그 렌더링 | [이동](#44-diagnostics-로깅-성능-모니터링-디버그-와이어-및-기즈모) |
 | **Math** | `Sizzle.Toolkits.Math` | `Direction2DUtils` | 2D 입력 벡터 $\leftrightarrow$ 8방향(`Direction8`) 각도 및 단위 벡터 상호 변환 | [이동](#46-math-2d-8방향-벡터-수학) |
 | **Physics** | `Sizzle.Toolkits.Physics` | `Collision2DEventProxy`, `CollisionEventProxy`, `Trigger2DEventProxy`, `TriggerEventProxy` | 하위 오브젝트의 2D/3D 충돌 및 트리거 이벤트를 부모나 특정 리스너로 릴레이 | [이동](#48-physics-2d3d-충돌-및-트리거-이벤트-프록시) |
@@ -425,7 +425,79 @@ public class InventoryScrollView : RecycledScrollView<ItemData, ItemCell>
 `SimpleSpriteAnimation` 컴포넌트로 Sprite 배열을 전달하여 경량 2D 애니메이션을 재생합니다.
 
 ### 4.3 Data (CSV/JSON 파서 및 고속 데이터 테이블)
-`DataTable<TKey, TData>`, `CSVTableParser<TData>`, `JSONTableParser<TData>`를 통해 기획 텍스트를 $O(1)$ 기본키 테이블로 로드합니다.
+> **네임스페이스**: `Sizzle.Toolkits.Data`
+
+#### 1) `CSVParser` & `[CSVColumn]` (어트리뷰트 기반 CSV 파싱)
+RFC 4180 표준 규격(따옴표 이스케이프, 개행 포함 셀, BOM 처리)을 준수하며, `[CSVColumn]` 어트리뷰트로 데이터 모델의 public/private 필드 및 private setter 프로퍼티를 자동 매핑합니다.
+
+```csharp
+public class CharacterData
+{
+    [CSVColumn("id", IsRequired = true)]
+    public string Id;
+
+    [CSVColumn("name")]
+    public string Name { get; private set; }
+
+    [CSVColumn("level", DefaultValue = 1)]
+    private int m_level;
+
+    [CSVColumn("tags")]
+    public string[] Tags; // "Warrior|Tank" 파이프/세미콜론 자동 배열 변환
+
+    public int Level => m_level;
+}
+
+// 1줄로 즉시 파싱 및 결과 취득
+string csv = "id,name,level,tags\nC01,Knight,10,Warrior|Tank\nC02,Wizard,,Mage";
+CSVParseResult<CharacterData> result = CSVParser.Parse<CharacterData>(csv);
+
+if (result.IsValid)
+{
+    // O(1) Dictionary 즉시 변환
+    Dictionary<string, CharacterData> dict = result.ToDictionary(x => x.Id);
+
+    // 조건 검색
+    CharacterData highLevel = result.Find(x => x.Level >= 10);
+}
+else
+{
+    // 오류 행 번호, 컬럼명, 원본 텍스트 상세 콘솔 출력
+    result.LogErrors();
+}
+```
+
+#### 2) `CSVParseConfig` (커스텀 컨버터 및 옵션 주입)
+전역 상태 없이 `CSVParseConfig` 인스턴스를 통해 커스텀 타입 변환 람다와 파서 옵션을 주입합니다. 프로젝트 공용 Config를 미리 만들어두고 모든 테이블 파싱에 재사용할 수 있습니다.
+```csharp
+// 프로젝트 공용 Config 정의 (GameTag, 커스텀 Enum 등 등록)
+public static class GameTableConfig
+{
+    public static readonly CSVParseConfig Instance = new CSVParseConfig()
+        .AddConverter<GameTag>(raw => new GameTag(raw))
+        .AddConverter<StatType>(raw => Enum.Parse<StatType>(raw, true));
+}
+
+// Config를 전달하여 완벽하게 격리된 파싱 수행
+var characters = CSVParser.Parse<CharacterData>(csv1, GameTableConfig.Instance);
+var skills = CSVParser.Parse<SkillData>(csv2, GameTableConfig.Instance);
+```
+
+#### 3) `DataTable<TKey, TData>` (고속 인게임 마스터 테이블)
+$O(1)$ 기본키 룩업 및 Zero-Allocation 순회를 제공하며, `CSVParser`의 결과나 TextAsset을 한 줄로 로드합니다.
+```csharp
+public class CharacterTable : DataTable<string, CharacterData>
+{
+    protected override string GetKey(CharacterData data) => data.Id;
+
+    public override void Load()
+    {
+        TextAsset asset = Resources.Load<TextAsset>("Tables/Characters");
+        var parseResult = CSVParser.Parse<CharacterData>(asset);
+        Load(parseResult);
+    }
+}
+```
 
 ### 4.4 Diagnostics (로깅, 성능 모니터링, 디버그 와이어 및 기즈모)
 `Logger`, `PerformanceMonitor`, `DebugExtensions.DrawBoxCast`, `GizmosEx`로 디버깅과 프로파일링을 지원합니다.
@@ -451,7 +523,6 @@ public class InventoryScrollView : RecycledScrollView<ItemData, ItemCell>
 
 * **에디터 도구**:
   - `ScreenTransitionManagerEditor`: 인스펙터 실시간 테스트 및 Abort 제어.
-  - `Tools > Sizzle > Run Table Parser Tests`: CSV/JSON 테이블 파서 자동 검증.
 * **데모 씬**:
   - `Assets/Plugins/Sizzle/Demo/UI/RecycledScrollViewDemoScene.unity` (5개 옵션별 재사용 스크롤뷰 및 버튼 이동 검증)
   - `Assets/Plugins/Sizzle/Demo/Transitions/TransitionTestScene.unity` (17종 트랜지션 실시간 테스트)

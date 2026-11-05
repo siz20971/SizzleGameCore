@@ -21,6 +21,12 @@
       "source": "local",
       "dependencies": {}
     },
+    "com.sizzle.toolkits": {
+      "version": "file:../../UnityPackages/com.sizzle.toolkits",
+      "depth": 0,
+      "source": "local",
+      "dependencies": {}
+    },
     "com.unity.ai.navigation": {
       "version": "2.0.12",
       "depth": 0,

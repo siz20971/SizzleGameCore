@@ -30,7 +30,7 @@
  *            if (textAsset == null) return;
  *
  *            // (방법 1) CSVTableParser를 사용한 1줄 로드 (자동 매핑 + Key 람다)
- *            Load(textAsset, new CSVTableParser<ItemData>(), item => item.Id);
+ *            Load(CSVParser.Parse<ItemData>(textAsset), item => item.Id);
  *
  *            // (방법 2) JSON 포맷인 경우:
  *            // Load(textAsset, new JSONTableParser<ItemData>(), item => item.Id);
@@ -370,6 +370,31 @@ namespace Sizzle.Toolkits.Data
                 Load(asset.text, parser, keySelector);
             else
                 Load(asset.text, parser, GetKey);
+        }
+
+        /// <summary>
+        /// CSVParser.Parse로부터 얻은 CSVParseResult 결과와 키 선택 람다식을 받아 데이터를 로드합니다.
+        /// </summary>
+        /// <param name="result">CSVParser 파싱 결과 컨테이너</param>
+        /// <param name="keySelector">TData에서 TKey를 추출하는 람다식 (null일 경우 GetKey 사용)</param>
+        public virtual void Load(CSVParseResult<TData> result, Func<TData, TKey> keySelector = null)
+        {
+            if (result == null) throw new ArgumentNullException(nameof(result));
+
+            Clear();
+            Reserve(result.Count);
+
+            var selector = keySelector ?? GetKey;
+            for (int i = 0; i < result.Count; i++)
+            {
+                var item = result[i];
+                if (item != null)
+                {
+                    Add(selector(item), item);
+                }
+            }
+
+            MarkLoaded();
         }
 
         /// <summary> 테이블 데이터를 메모리에서 해제하고 상태를 비웁니다. </summary>

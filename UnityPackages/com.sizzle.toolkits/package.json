@@ -1,7 +1,7 @@
 {
   "name": "com.sizzle.toolkits",
   "displayName": "Sizzle Toolkits",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "unity": "6000.3",
   "description": "A comprehensive gameplay foundation toolkit for Unity including UI, Input, StateMachine, EventBus, Math, Transitions, and diagnostics utilities.",
   "documentationUrl": "https://github.com/siz20971/SizzleGameCore/tree/main/UnityPackages/com.sizzle.toolkits",
