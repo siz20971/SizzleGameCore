@@ -212,10 +212,12 @@ namespace Sizzle.Toolkits.Input
             {
                 return InputDeviceType.PlayStationGamepad;
             }
+#if UNITY_SWITCH || UNITY_SWITCH2
             if (device is SwitchProController)
             {
                 return InputDeviceType.SwitchGamepad;
             }
+#endif
             if (device is Gamepad)
             {
                 // 제품명 기반 추가 식별 시도
