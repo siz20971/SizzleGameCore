@@ -1,5 +1,7 @@
 # Sizzle GameTag System
 
+[← SizzleGameCore 저장소 루트](../../README.md)
+
 `Sizzle GameTag System`은 문자열 기반 계층 태그를 이용해 게임 상태를 표현하고 조회하는 경량 태그 시스템입니다.
 
 예를 들어 다음과 같은 태그를 사용할 수 있습니다.
@@ -394,8 +396,8 @@ public class CharacterStatus : MonoBehaviour
 | `dropdownOnly` / `DropdownOnly` | `bool` | `false` | 직접 텍스트 타이핑을 잠그고 팝업 버튼으로만 선택하도록 강제합니다. |
 | `exclude` / `Exclude` | `string` | `""` | 제외할 태그 또는 하위 접두사입니다. (쉼표로 구분하여 복수 지정 가능) |
 | `excludeTags` / `ExcludeTags` | `string[]` | `[]` | 제외할 태그들의 배열입니다. |
-| `relativePathInMenu` | `bool` | `true` | 드롭다운 메뉴에서 부모 접두사를 생략하고 `A`, `B`처럼 상대 경로로 간결하게 표시합니다. (선택 시 전체 풀네임 적용) |
-| `restrictToParent` | `bool` | `true` | 직접 입력 시 하위 태그명(`A`)만 입력해도 자동으로 `Status.Buff.A`로 완성하며 타 계층 입력을 차단 및 복원합니다. |
+| `relativePathInMenu` | `bool` | `true` | 드롭다운 메뉴에서 부모 접두사를 생략하고 `A`, `B`처럼 상대 경로로 표시<br>(선택 시 전체 풀네임 적용) |
+| `restrictToParent` | `bool` | `true` | 직접 입력 시 하위 태그명(`A`)만 입력해도 자동으로 `Status.Buff.A`로 완성하며<br>타 계층 입력 차단 및 자동 복원 |
 | `allowEmpty` | `bool` | `true` | 빈 태그(`<None>`) 선택 및 입력을 허용합니다. |
 
 #### 인스펙터 기능

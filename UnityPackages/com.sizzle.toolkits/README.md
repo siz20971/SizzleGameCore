@@ -1,5 +1,7 @@
 # Sizzle.Toolkits
 
+[← SizzleGameCore 저장소 루트](../../README.md)
+
 Unity 6 기반의 경량, 고성능, 모듈형 게임 개발 툴킷 프레임워크입니다.  
 프로덕션 레벨의 상태 머신(FSM), 17종 화면 전환(Transition), 비동기 이벤트 버스(GameEventBus), UI/물리 유틸리티, 데이터 테이블 파서, 진단/디버깅 도구, $O(1)$ 선입력 버퍼 및 반응형 데이터 프로퍼티 등을 파일 하나로 손쉽게 탐색하고 적용할 수 있도록 설계되었습니다.
 
@@ -38,7 +40,7 @@ Unity 6 기반의 경량, 고성능, 모듈형 게임 개발 툴킷 프레임워
 | **Common** | `Sizzle.Toolkits` | `ObjectPool<T>` | Unity `IObjectPool<T>` 표준 준수 및 GameObject 위치 대여 지원 풀러 | [이동](#42-common-공통-확장-오브젝트-풀러-이징-싱글톤-포맷터) |
 | **Common** | `Sizzle.Toolkits` | `SingletonMono<T>`, `PersistentSingletonMono<T>` | 중복 방지 및 씬 전환 유지(`DontDestroyOnLoad`) 지원 싱글톤 베이스 | [이동](#42-common-공통-확장-오브젝트-풀러-이징-싱글톤-포맷터) |
 | **Common** | `Sizzle.Toolkits` | `TweenEasing`, `EaseType` | 외부 라이브러리 없이 30여 종 이징 커브를 평가하는 순수 수학 유틸 | [이동](#42-common-공통-확장-오브젝트-풀러-이징-싱글톤-포맷터) |
-| **Common** | `Sizzle.Toolkits` | `CollectionExtensions`, `MonoExtensions`, `Collider2DExtensions`, `TransformExtensions`, `ColorExtensions`, `LayerMaskExtensions`, `FormatUtils` | 컬렉션/모노/콜라이더/트랜스폼/색상/레이어/포맷팅 편의 확장 모음 | [이동](#42-common-공통-확장-오브젝트-풀러-이징-싱글톤-포맷터) |
+| **Common** | `Sizzle.Toolkits` | `CollectionExtensions`, `MonoExtensions`<br>`Collider2DExtensions`, `TransformExtensions`<br>`ColorExtensions`, `LayerMaskExtensions`<br>`FormatUtils` | 컬렉션/모노/콜라이더/트랜스폼/색상/레이어/포맷팅 편의 확장 모음 | [이동](#42-common-공통-확장-오브젝트-풀러-이징-싱글톤-포맷터) |
 | **Common** | `Sizzle.Toolkits` | `GlobalCoroutineRunner` | 일반 C# 클래스나 static 영역에서 코루틴을 돌리는 전역 호스트 | [이동](#42-common-공통-확장-오브젝트-풀러-이징-싱글톤-포맷터) |
 | **Common** | `Sizzle.Toolkits` | `GridPlacement` | 자식 트랜스폼들을 평면 격자 형태로 자동 정렬하는 컴포넌트 | [이동](#42-common-공통-확장-오브젝트-풀러-이징-싱글톤-포맷터) |
 | **Input** | `Sizzle.Toolkits.Input` | `InputBuffer` | **[액션 게임 필수]** 리스트 순회 비용 없는 $O(1)$ 딕셔너리 기반 선입력 버퍼 | [이동](#45-input-o1-선입력-버퍼-입력-장치-감지기-액션-오버라이드) |
@@ -50,22 +52,22 @@ Unity 6 기반의 경량, 고성능, 모듈형 게임 개발 툴킷 프레임워
 | **Messaging** | `Sizzle.Toolkits.Messaging` | `StickyMessageBus` | 최신 상태를 기억해 신규 구독자에게도 즉시 1회 전달하는 스티키 버스 | [이동](#47-messaging-글로벌로컬-이벤트-버스-반응형-값-asyncawait-스트림) |
 | **Messaging** | `Sizzle.Toolkits.Messaging` | `AsyncMessageStream` | `await AsyncMessageStream.WaitForAsync<T>()` 형태로 특정 이벤트 발생 대기 | [이동](#47-messaging-글로벌로컬-이벤트-버스-반응형-값-asyncawait-스트림) |
 | **Messaging** | `Sizzle.Toolkits.Messaging` | `RequestResponseBus` | 단방향 알림 대신 요청을 보내고 비동기 응답(`Task<T>`)을 받는 RPC 패턴 버스 | [이동](#47-messaging-글로벌로컬-이벤트-버스-반응형-값-asyncawait-스트림) |
-| **Messaging** | `Sizzle.Toolkits.Messaging` | `QueuedMessageBus`, `DebouncedEventDispatcher`, `FilteredEventChannel<T>`, `HierarchicalEventRelay`, `EventBusDebugger` | 큐잉 지연 배치, 디바운스/쓰로틀, 채널 라우터, 계층 버블링, 이벤트 트레이서 | [이동](#47-messaging-글로벌로컬-이벤트-버스-반응형-값-asyncawait-스트림) |
+| **Messaging** | `Sizzle.Toolkits.Messaging` | `QueuedMessageBus`<br>`DebouncedEventDispatcher`<br>`FilteredEventChannel<T>`<br>`HierarchicalEventRelay`<br>`EventBusDebugger` | 큐잉 지연 배치, 디바운스/쓰로틀,<br>채널 라우터, 계층 버블링, 이벤트 트레이서 | [이동](#47-messaging-글로벌로컬-이벤트-버스-반응형-값-asyncawait-스트림) |
 | **UI** | `Sizzle.Toolkits.UI` | `UIUtility` | RectTransform이 화면 경계를 벗어나지 않도록 클램핑 및 월드-캔버스 좌표 변환 | [이동](#412-ui-페이더-롤링-카운터-화면-클램핑-가상-조이스틱-타이프라이터) |
 | **UI** | `Sizzle.Toolkits.UI` | `CanvasGroupFader` | 팝업 열기/닫기 시 CanvasGroup Alpha/상호작용 페이드 1줄 제어 (Awaitable) | [이동](#412-ui-페이더-롤링-카운터-화면-클램핑-가상-조이스틱-타이프라이터) |
 | **UI** | `Sizzle.Toolkits.UI` | `AnimatedNumberCounter` | 수치 변경 시 목표치까지 부드럽게 롤링(카운트업/다운)되는 텍스트 컴포넌트 | [이동](#412-ui-페이더-롤링-카운터-화면-클램핑-가상-조이스틱-타이프라이터) |
 | **UI** | `Sizzle.Toolkits.UI` | `LongPressButton` | `Selectable` 상속으로 마우스/터치/키보드/게임패드 Submit을 완벽 지원하는 홀드 버튼 | [이동](#412-ui-페이더-롤링-카운터-화면-클램핑-가상-조이스틱-타이프라이터) |
 | **UI** | `Sizzle.Toolkits.UI` | `TypewriterText` | 단어 줄바꿈 튐(Jitter) 없이 전체 레이아웃을 고정한 채 가시성을 밝히는 타이프라이터 | [이동](#412-ui-페이더-롤링-카운터-화면-클램핑-가상-조이스틱-타이프라이터) |
 | **UI** | `Sizzle.Toolkits.UI` | `RecycledScrollView<TData, TCell>`, `RecycledScrollCell<TData>` | 대량 데이터 가상화 재사용 스크롤뷰 (수직/수평, 다단 컬럼, 대각선 시프트, 중앙 감지) | [이동](#412-ui-페이더-롤링-카운터-화면-클램핑-가상-조이스틱-타이프라이터) |
-| **UI** | `Sizzle.Toolkits.UI` | `VirtualJoystick`, `DualFollowSlider`, `WorldSpaceUIFollower` | 모바일 가상 조이스틱, 체력바 완충 지연 잔상 슬라이더, 월드 타깃 추적 UI | [이동](#412-ui-페이더-롤링-카운터-화면-클램핑-가상-조이스틱-타이프라이터) |
+| **UI** | `Sizzle.Toolkits.UI` | `VirtualJoystick`, `DualFollowSlider`<br>`WorldSpaceUIFollower` | 모바일 가상 조이스틱, 체력바 잔상 슬라이더,<br>월드 타깃 추적 UI | [이동](#412-ui-페이더-롤링-카운터-화면-클램핑-가상-조이스틱-타이프라이터) |
 | **Animations** | `Sizzle.Toolkits.Animations` | `SimpleSpriteAnimation` | 무거운 Animator 없이 Sprite 배열을 순차 재생하는 경량 컴포넌트 | [이동](#41-animations-스프라이트-애니메이션) |
-| **Data** | `Sizzle.Toolkits.Data` | `CSVParser`, `CSVColumnAttribute`, `CSVParseConfig`, `CSVParseResult<TData>`, `DataTable<TKey, TData>`, `JSONTableParser<TData>` | RFC 4180 호환 CSV 파서, [CSVColumn] 어트리뷰트 바인딩, CSVParseConfig 설정 객체 및 $O(1)$ 기본키 데이터 테이블 | [이동](#43-data-csvjson-파서-및-고속-데이터-테이블) |
-| **Diagnostics** | `Sizzle.Toolkits.Diagnostics` | `Logger`, `PerformanceMonitor`, `DebugExtensions`, `DebugHelper`, `GizmosEx` | 심각도 로거, 온스크린 실시간 FPS/메모리 모니터링, 박스/원/부채꼴/화살표 디버그 렌더링 | [이동](#44-diagnostics-로깅-성능-모니터링-디버그-와이어-및-기즈모) |
+| **Data** | `Sizzle.Toolkits.Data` | `CSVParser`, `CSVColumnAttribute`<br>`CSVParseConfig`<br>`CSVParseResult<TData>`<br>`DataTable<TKey, TData>`<br>`JSONTableParser<TData>` | RFC 4180 호환 CSV 파서, `[CSVColumn]` 바인딩,<br>`CSVParseConfig` 설정 및 $O(1)$ 기본키 데이터 테이블 | [이동](#43-data-csvjson-파서-및-고속-데이터-테이블) |
+| **Diagnostics** | `Sizzle.Toolkits.Diagnostics` | `Logger`, `PerformanceMonitor`<br>`DebugExtensions`, `DebugHelper`<br>`GizmosEx` | 심각도 로거, 온스크린 실시간 FPS/메모리 모니터,<br>박스/원/부채꼴/화살표 디버그 렌더링 | [이동](#44-diagnostics-로깅-성능-모니터링-디버그-와이어-및-기즈모) |
 | **Math** | `Sizzle.Toolkits.Math` | `Direction2DUtils` | 2D 입력 벡터 $\leftrightarrow$ 8방향(`Direction8`) 각도 및 단위 벡터 상호 변환 | [이동](#46-math-2d-8방향-벡터-수학) |
-| **Physics** | `Sizzle.Toolkits.Physics` | `Collision2DEventProxy`, `CollisionEventProxy`, `Trigger2DEventProxy`, `TriggerEventProxy` | 하위 오브젝트의 2D/3D 충돌 및 트리거 이벤트를 부모나 특정 리스너로 릴레이 | [이동](#48-physics-2d3d-충돌-및-트리거-이벤트-프록시) |
-| **StateMachine** | `Sizzle.Toolkits.StateMachine` | `EnumStateMachine`, `EnumStateBase`, `TypeStateMachine`, `TypeStateBase` | 직관적인 열거형(Enum) FSM 및 확장성 높은 클래스 타입/별칭 기반 FSM 제공 | [이동](#49-statemachine-열거형-및-타입-기반-fsm) |
+| **Physics** | `Sizzle.Toolkits.Physics` | `Collision2DEventProxy`<br>`CollisionEventProxy`<br>`Trigger2DEventProxy`<br>`TriggerEventProxy` | 하위 오브젝트의 2D/3D 충돌 및 트리거 이벤트를<br>부모나 특정 리스너로 릴레이 | [이동](#48-physics-2d3d-충돌-및-트리거-이벤트-프록시) |
+| **StateMachine** | `Sizzle.Toolkits.StateMachine` | `EnumStateMachine`, `EnumStateBase`<br>`TypeStateMachine`, `TypeStateBase` | 직관적인 열거형(Enum) FSM 및<br>확장성 높은 클래스 타입/별칭 기반 FSM 제공 | [이동](#49-statemachine-열거형-및-타입-기반-fsm) |
 | **Transitions** | `Sizzle.Toolkits.Transitions` | `ScreenTransitionManager`, `ScreenTransitionProfile` (17종), 드라이버 2종 | Unity 6 `Awaitable` 기반 비동기 화면 전환 오케스트레이터 및 17종 셰이더 프로필 | [이동](#410-transitions-awaitable-기반-17종-화면-전환-시스템) |
-| **Types** | `Sizzle.Toolkits.Types` | `RangedValue<T>`, `RangedInt`, `RangedFloat`, `AlignmentAnchor`, `AxisPlane`, `Direction8` | Min-Max 클램프 및 백분율 지원 수치 래퍼, 9방향 앵커, 6축 평면 열거형 | [이동](#411-types-기본-범용-타입-및-범위-래퍼) |
+| **Types** | `Sizzle.Toolkits.Types` | `RangedValue<T>`, `RangedInt`<br>`RangedFloat`, `AlignmentAnchor`<br>`AxisPlane`, `Direction8` | Min-Max 클램프 및 백분율 지원 수치 래퍼,<br>9방향 앵커, 6축 평면 열거형 | [이동](#411-types-기본-범용-타입-및-범위-래퍼) |
 
 ---
 
@@ -74,12 +76,12 @@ Unity 6 기반의 경량, 고성능, 모듈형 게임 개발 툴킷 프레임워
 툴킷 개발 및 유지보수 시 직관적인 사용성과 인지 비용 절감을 위해 명확한 네임스페이스 & 폴더 매핑 규칙을 준수합니다.
 
 ### 2.1 `Common` 폴더 격리 규칙 (높은 접근성 보장)
-* **경로**: `Assets/Plugins/Sizzle/Runtime/Common/` 및 `Common/Extensions/`
+* **경로**: `Runtime/Common/` 및 `Common/Extensions/`
 * **네임스페이스**: **`namespace Sizzle.Toolkits`** (루트 네임스페이스)
 * **목적**: 확장 메서드(`Common/Extensions/`), 오브젝트 풀, 쿨다운 타이머 등 프로젝트 전반에서 매번 서브 네임스페이스를 임포트하지 않고도 `using Sizzle.Toolkits;` 선언만으로 즉시 자동 완성되어야 하는 핵심 도구들을 보관합니다. 물리적으로는 `Extensions/` 하위로 깔끔하게 격리하되 네임스페이스는 루트를 공유합니다.
 
 ### 2.2 도메인 모듈 1:1 매칭 규칙
-* **경로**: `Assets/Plugins/Sizzle/Runtime/<ModuleName>/`
+* **경로**: `Runtime/<ModuleName>/`
 * **네임스페이스**: **`namespace Sizzle.Toolkits.<ModuleName>`**
 * **규칙**: `Common` 폴더 외부에 위치한 모든 1급 모듈 폴더는 **폴더명과 네임스페이스가 100% 1:1로 일치**합니다.
   * 예: `Runtime/UI/` $\to$ `namespace Sizzle.Toolkits.UI`
@@ -91,7 +93,8 @@ Unity 6 기반의 경량, 고성능, 모듈형 게임 개발 툴킷 프레임워
 ## 3. 디렉터리 구조
 
 ```
-Assets/Plugins/Sizzle/
+com.sizzle.toolkits/
+├── package.json
 ├── README.md                          # 툴킷 종합 안내 문서 (본 파일)
 ├── Runtime/                           # Sizzle.Toolkits 어셈블리 (프로덕션 런타임)
 │   ├── Common/                        # [루트 네임스페이스: Sizzle.Toolkits]
@@ -523,10 +526,10 @@ public class CharacterTable : DataTable<string, CharacterData>
 
 * **에디터 도구**:
   - `ScreenTransitionManagerEditor`: 인스펙터 실시간 테스트 및 Abort 제어.
-* **데모 씬**:
-  - `Assets/Plugins/Sizzle/Demo/UI/RecycledScrollViewDemoScene.unity` (5개 옵션별 재사용 스크롤뷰 및 버튼 이동 검증)
-  - `Assets/Plugins/Sizzle/Demo/Transitions/TransitionTestScene.unity` (17종 트랜지션 실시간 테스트)
-  - `Assets/Plugins/Sizzle/Demo/StateMachine/StateMachineDemoScene.unity` (FSM 테스트)
+* **샘플 / 데모 씬**:
+  - `Samples/UI/RecycledScrollViewDemoScene.unity` (5개 옵션별 재사용 스크롤뷰 및 버튼 이동 검증)
+  - `Samples/Transitions/TransitionTestScene.unity` (17종 트랜지션 실시간 테스트)
+  - `Samples/StateMachine/StateMachineDemoScene.unity` (FSM 테스트)
 
 ---
 

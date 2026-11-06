@@ -1,5 +1,7 @@
 # Sizzle Ability System
 
+[← SizzleGameCore 저장소 루트](../../README.md)
+
 `Sizzle Ability System`은 `ScriptableObject` 기반 어빌리티를 `AbilityProcessor`에 등록하고, `GameTag`를 이용해 실행 조건과 상호작용을 제어하는 Unity 패키지입니다.
 
 이 패키지는 다음 문제를 풀기 위해 만들어졌습니다.
@@ -10,7 +12,7 @@
 - 재실행 정책을 통일된 방식으로 다루고 싶을 때
 - 실행 중인 어빌리티와 태그 상태를 에디터에서 확인하고 싶을 때
 
-이 패키지는 [com.sizzle.gametagsystem](../com.sizzle.gametagsystem/README.md) 에 의존합니다.
+이 패키지는 [com.sizzle.gametagsystem](../com.sizzle.gametagsystem/README.md)에 의존합니다.
 
 ## 핵심 개념
 

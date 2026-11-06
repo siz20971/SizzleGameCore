@@ -7,10 +7,10 @@ Unity에서 사용할 수 있는 `Sizzle` 계열 코어 패키지를 모아둔 �
 이 저장소에는 현재 아래 3개의 UPM 패키지가 포함되어 있습니다.
 
 | 패키지 | 설명 | 문서 |
-| --- | --- | --- |
-| `com.sizzle.gametagsystem` | 문자열 기반 계층 태그를 이용해 상태, 이벤트, 버프/디버프, 조건 검사를 구성하는 경량 GameTag 시스템입니다. exact / descendant 조회, timed tag, notify tag를 지원합니다. | [`UnityPackages/com.sizzle.gametagsystem/README.md`](./UnityPackages/com.sizzle.gametagsystem/README.md) |
-| `com.sizzle.abilitysystem` | `ScriptableObject` 기반 어빌리티를 `AbilityProcessor`로 실행하고, `GameTag` 규칙으로 실행 조건, 차단, 취소, 트리거를 제어하는 Ability 시스템입니다. | [`UnityPackages/com.sizzle.abilitysystem/README.md`](./UnityPackages/com.sizzle.abilitysystem/README.md) |
-| `com.sizzle.toolkits` | 게임 개발 전반을 위한 기반 툴킷 모음입니다. 가상화 스크롤뷰(`RecycledScrollView`), FSM 상태머신, 화면 전환 셰이더(Transitions), 비동기 이벤트 버스, 입력 버퍼 및 UI/수학 유틸리티를 제공합니다. | [`UnityPackages/com.sizzle.toolkits/README.md`](./UnityPackages/com.sizzle.toolkits/README.md) |
+| :--- | :--- | :---: |
+| `com.sizzle.gametagsystem` | 문자열 기반 계층 태그로 상태, 이벤트, 조건 검사를 다루는 경량 태그 시스템<br>• exact / descendant 계층 조회<br>• Timed tag(자동 만료) 및 Notify tag(단발 이벤트) 지원 | [상세 보기](./UnityPackages/com.sizzle.gametagsystem/README.md) |
+| `com.sizzle.abilitysystem` | `ScriptableObject` 기반 어빌리티 실행 및 제어 프레임워크<br>• `GameTag` 규칙 기반 발동 조건, 차단, 취소, 트리거 제어<br>• 모듈형 액션 시퀀스(`ActionSequence`) 및 디버거 툴 제공 | [상세 보기](./UnityPackages/com.sizzle.abilitysystem/README.md) |
+| `com.sizzle.toolkits` | 게임 개발 전반을 위한 고성능 모듈형 기반 툴킷 모음<br>• 가상화 스크롤뷰(`RecycledScrollView`) 및 UI 유틸리티<br>• FSM 상태머신, Awaitable 17종 화면 전환(Transitions)<br>• 비동기 이벤트 버스, $O(1)$ 선입력 버퍼, 수학/진단 툴 | [상세 보기](./UnityPackages/com.sizzle.toolkits/README.md) |
 
 ## Install
 
@@ -68,6 +68,9 @@ Windows 환경에서는 프로젝트처럼 상대 경로 또는 절대 경로를
 
 ## Package 선택 가이드
 
-- 상태 태그, 이벤트 태그, timed tag가 필요하면 `com.sizzle.gametagsystem`
-- 스킬/어빌리티 실행기와 태그 기반 조건 제어가 필요하면 `com.sizzle.abilitysystem`
-- 최적화 UI(`RecycledScrollView` 등), 상태머신, 화면 전환, 이벤트 버스 등 기반 툴킷이 필요하면 `com.sizzle.toolkits`
+- **`com.sizzle.gametagsystem`**  
+  상태 태그, 이벤트 태그, timed tag 등 경량 계층 태그 관리가 필요한 경우
+- **`com.sizzle.abilitysystem`**  
+  스킬/어빌리티 실행기와 태그 기반 상호작용 제어 및 모듈형 액션 시퀀스가 필요한 경우
+- **`com.sizzle.toolkits`**  
+  가상화 UI(`RecycledScrollView`), FSM 상태머신, 화면 전환, 이벤트 버스, 선입력 버퍼 등 범용 기반 툴킷이 필요한 경우
