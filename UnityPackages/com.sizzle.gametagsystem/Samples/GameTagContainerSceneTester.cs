@@ -309,7 +309,7 @@ namespace Sizzle.GameTagSystem
             Log($"{action}: {info.Tag.TagName} (Remains: {info.Remains})");
         }
 
-        private void HandleTagNotified(GameTag gameTag)
+        private void HandleTagNotified(GameTag gameTag, object payload)
         {
             Log($"Notified: {gameTag.TagName}");
         }

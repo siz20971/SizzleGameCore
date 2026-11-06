@@ -213,11 +213,10 @@ if (handle.IsValid)
 
 ## 이벤트 및 리스너
 
-`GameTagContainer`는 다음 세 가지 형태의 이벤트를 제공합니다.
+`GameTagContainer`는 다음 두 가지 형태의 이벤트를 제공합니다.
 
 - `OnTagOwnshipChanged`: 태그 보유 수량이 변경될 때 호출
-- `OnTagNotified`: `NotifyTag` 호출 시 전달되는 단발성 이벤트
-- `OnTagNotifiedWithData`: `NotifyTag` 호출 시 전달되는 단발성 이벤트 (자유 페이로드 데이터 포함)
+- `OnTagNotified`: `NotifyTag` 호출 시 전달되는 단발성 이벤트 (선택적 페이로드 데이터 포함)
 
 ### C# 이벤트 구독
 
@@ -228,14 +227,12 @@ private void OnEnable()
 {
     m_tagContainer.OnTagOwnshipChanged += HandleTagChanged;
     m_tagContainer.OnTagNotified += HandleTagNotified;
-    m_tagContainer.OnTagNotifiedWithData += HandleTagNotifiedWithData;
 }
 
 private void OnDisable()
 {
     m_tagContainer.OnTagOwnshipChanged -= HandleTagChanged;
     m_tagContainer.OnTagNotified -= HandleTagNotified;
-    m_tagContainer.OnTagNotifiedWithData -= HandleTagNotifiedWithData;
 }
 
 private void HandleTagChanged(GameTagContainer.GameTagOwnshipChangeInfo info)
@@ -243,14 +240,9 @@ private void HandleTagChanged(GameTagContainer.GameTagOwnshipChangeInfo info)
     Debug.Log($"Tag Changed: {info.Tag.TagName}, Added: {info.Added}, Remains: {info.Remains}");
 }
 
-private void HandleTagNotified(GameTag gameTag)
+private void HandleTagNotified(GameTag gameTag, object payload)
 {
-    Debug.Log($"Tag Notified: {gameTag.TagName}");
-}
-
-private void HandleTagNotifiedWithData(GameTag gameTag, object payload)
-{
-    Debug.Log($"Tag Notified With Data: {gameTag.TagName}, Payload: {payload}");
+    Debug.Log($"Tag Notified: {gameTag.TagName}, Payload: {payload}");
 }
 ```
 
@@ -278,13 +270,7 @@ public class TagListenerExample : MonoBehaviour, IGameTagListener
         Debug.Log($"Changed: {info.Tag.TagName}");
     }
 
-    // 기본 단발성 알림
-    public void OnGameTagNotified(GameTag gameTag)
-    {
-        Debug.Log($"Notified: {gameTag.TagName}");
-    }
-
-    // 페이로드가 포함된 알림 (선택적 구현 가능, 기본 구현 제공)
+    // 단발성 알림 (선택적 페이로드 데이터 포함)
     public void OnGameTagNotified(GameTag gameTag, object payload)
     {
         Debug.Log($"Notified: {gameTag.TagName}, Data: {payload}");
@@ -324,33 +310,44 @@ container.NotifyTag<string>(new GameTag("Skill.Cast.Start"), "CastDuration: 1.5s
 
 패키지에는 `GameTagPropertyDrawer`가 포함되어 있어 인스펙터에서 태그 문자열을 직접 입력하거나 캐시된 태그 목록을 선택할 수 있습니다.
 
-다만 주의할 점이 있습니다.
+### 인스펙터 드롭다운 및 GameTagCache 자동 수집
 
-- `GameTagPropertyDrawer`의 태그 선택 메뉴는 `GameTagCache`가 채워져 있어야 정상 동작합니다.
-- `com.sizzle.gametagsystem` 패키지 자체는 캐시를 자동으로 채우지 않습니다.
-- 현재 워크스페이스에서는 `com.sizzle.abilitysystem`의 editor 유틸리티가 캐시를 채우는 방식으로 연결되어 있습니다.
+`GameTagPropertyDrawer`의 태그 선택 메뉴(🔍 필터 검색, 📋 전체 목록)는 `GameTagCache`에 등록된 태그들을 기반으로 동작합니다.
+패키지에 포함된 `GameTagCacheAutoCollector`가 에디터 로드, 컴파일, 애셋 변경 시 프로젝트 내의 태그들을 **자동으로 수집하여 캐시에 등록**합니다.
 
-즉, 이 패키지만 단독 사용한다면 프로젝트의 editor 초기화 코드에서 직접 캐시를 채워야 합니다.
+태그를 등록하는 방법은 다음과 같습니다.
 
-예시:
+#### 1. [GameTagPreset] 어트리뷰트 (권장)
+클래스나 구조체에 `[GameTagPreset]` 어트리뷰트를 선언하면, 내부의 `static` `GameTag` 및 `string` 필드/프로퍼티를 자동으로 수집합니다.
 
 ```csharp
 using Sizzle.GameTagSystem;
-using Sizzle.GameTagSystem.Editor;
-using UnityEditor;
 
-public static class GameTagEditorBootstrap
+[GameTagPreset]
+public static class CustomTags
 {
-    [InitializeOnLoadMethod]
-    private static void Initialize()
-    {
-        GameTagCache.ClearCache();
-        GameTagCache.Add(new GameTag("State.Stunned"));
-        GameTagCache.Add(new GameTag("Skill.Attack"));
-        GameTagCache.Add(new GameTag("Skill.Attack.Fireball"));
-    }
+    public static readonly GameTag Stunned = new GameTag("State.Stunned");
+    public static readonly GameTag Attack = new GameTag("Skill.Attack");
+    public static readonly string Fireball = "Skill.Attack.Fireball"; // string도 지원
 }
 ```
+
+#### 2. GameTagPreset ScriptableObject 애셋
+코드 작성 없이 유니티 프로젝트 창에서 애셋으로 태그 목록을 관리할 수 있습니다.
+- `Assets > Create > Sizzle > Game Tag Preset` 메뉴로 애셋을 생성합니다.
+- 인스펙터에서 관리할 태그 목록(`m_tags`)을 추가합니다.
+- 에디터가 프로젝트 내의 `GameTagPreset` 애셋들을 자동으로 탐색하여 수집하며, 애셋 수정/삭제 시에도 실시간으로 동기화됩니다.
+
+#### 3. 수동 새로고침 및 API 직접 호출
+- **에디터 메뉴**: 상단 메뉴 `Sizzle > Game Tag System > Refresh GameTag Cache`를 실행하면 캐시를 즉시 초기화하고 재수집합니다.
+- **코드에서 직접 제어**: 커스텀 에디터 도구 등에서 동적으로 태그를 등록해야 하는 경우 `GameTagCache` 클래스의 메서드를 직접 호출할 수 있습니다.
+  ```csharp
+  using Sizzle.GameTagSystem;
+  using Sizzle.GameTagSystem.Editor;
+
+  GameTagCache.Add(new GameTag("Custom.Tag"));
+  GameTagCache.AddRange(myTagList);
+  ```
 
 ### GameTagOptionAttribute (인스펙터 제어)
 

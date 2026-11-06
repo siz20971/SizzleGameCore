@@ -346,11 +346,11 @@ namespace Sizzle.AbilitySystem
         #endregion
 
         #region Callback Methods
-        private void OnTagNotified(GameTag gametag)
+        private void OnTagNotified(GameTag gametag, object payload)
         {
             if (!m_triggerableContexts.TryGetValue(gametag, out AbilityRuntimeContext targetContext))
                 return;
-            TryActivateAbilityImplement(targetContext, null);
+            TryActivateAbilityImplement(targetContext, payload as AbilityActivatePayload);
         }
         #endregion
 

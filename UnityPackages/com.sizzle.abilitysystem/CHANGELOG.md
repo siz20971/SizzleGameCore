@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.13 - 2026-11-06
+### 기능 개선 및 의존성 업데이트
+- **트리거 어빌리티 페이로드 연동 (`TriggerTag`)**:
+  - `GameTagContainer.OnTagNotified` 단일 시그니처(`(GameTag, object)`) 변경에 맞춰 `AbilityProcessor` 리스너 갱신.
+  - `NotifyTag(tag, payload)`를 통해 트리거된 어빌리티 실행 시 전달된 `AbilityActivatePayload`가 활성화 인자로 직접 넘어가도록 지원.
+  - 의존성 패키지 `com.sizzle.gametagsystem`의 버전을 `0.1.8`로 업데이트.
+
 ## 0.1.12 - 2026-09-27
 ### 버그 수정 및 안정화
 - **`AbilityAction.DeepClone` 네이티브 객체 크래시 해결**:

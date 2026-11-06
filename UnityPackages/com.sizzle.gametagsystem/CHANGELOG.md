@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.8 - 2026-11-06
+### 변경 사항 (Breaking Change)
+- **TagContainer Notify 이벤트 단일화**:
+  - `OnTagNotifiedWithData` 이벤트를 제거하고 `OnTagNotified`를 `(GameTag gameTag, object payload)` 단일 시그니처로 통일.
+  - `IGameTagListener`의 다중 오버로드를 단일 메서드 `void OnGameTagNotified(GameTag gameTag, object payload)`로 통일.
+
 ## 0.1.7 - 2026-09-20
 ### 신규 기능
 - **GameTagOptionAttribute 추가**:

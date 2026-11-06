@@ -18,15 +18,9 @@ namespace Sizzle.GameTagSystem
 
         /// <summary>
         /// 태그 알림 이벤트가 발생했을 때 호출됩니다.
-        /// 소유 여부와 무관한 단발성 notify 신호입니다.
+        /// 소유 여부와 무관한 단발성 notify 신호이며, 선택적으로 데이터(payload)가 함께 전달됩니다.
         /// </summary>
-        void OnGameTagNotified(GameTag gameTag);
-
-        /// <summary>
-        /// 데이터(페이로드)가 포함된 태그 알림 이벤트가 발생했을 때 호출됩니다.
-        /// 기본 구현은 기존 OnGameTagNotified(gameTag)를 호출하도록 되어 있어 하위 호환성을 유지합니다.
-        /// </summary>
-        void OnGameTagNotified(GameTag gameTag, object payload) => OnGameTagNotified(gameTag);
+        void OnGameTagNotified(GameTag gameTag, object payload);
     }
 
     [Serializable]
@@ -40,8 +34,7 @@ namespace Sizzle.GameTagSystem
         }
 
         public delegate void GameTagOwnshipChangedHandler(GameTagOwnshipChangeInfo info);
-        public delegate void GameTagNotifiedHandler(GameTag gameTag);
-        public delegate void GameTagNotifiedWithDataHandler(GameTag gameTag, object payload);
+        public delegate void GameTagNotifiedHandler(GameTag gameTag, object payload);
 
         private Dictionary<GameTag, int> m_ownTagCounts = new Dictionary<GameTag, int>();
 
@@ -71,7 +64,6 @@ namespace Sizzle.GameTagSystem
 
         public event GameTagOwnshipChangedHandler OnTagOwnshipChanged = null;
         public event GameTagNotifiedHandler OnTagNotified = null;
-        public event GameTagNotifiedWithDataHandler OnTagNotifiedWithData = null;
 
         private List<IGameTagListener> m_gameTagListeners = new List<IGameTagListener>();
         private IGameTagListener[] m_gameTagListenersCache = Array.Empty<IGameTagListener>();
@@ -208,8 +200,7 @@ namespace Sizzle.GameTagSystem
             if (tag.IsEmpty)
                 return;
 
-            OnTagNotified?.Invoke(tag);
-            OnTagNotifiedWithData?.Invoke(tag, payload);
+            OnTagNotified?.Invoke(tag, payload);
             NotifyTagListeners(tag, payload);
         }
 
@@ -433,7 +424,7 @@ namespace Sizzle.GameTagSystem
                 m_entry = entry;
             }
 
-            /// <summary>아직 만료·취소되지 않은 경우 true.</summary>
+            /// <summary> 아직 만료·취소되지 않은 경우 true.</summary>
             public bool IsValid => m_entry != null && !m_entry.Cancelled;
 
             /// <summary>

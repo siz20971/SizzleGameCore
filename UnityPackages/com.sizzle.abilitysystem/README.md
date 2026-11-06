@@ -254,15 +254,19 @@ BlockAbilitiesWithTag: 이 어빌리티가 켜져 있는 동안 다른 어빌리
 
 ### TriggerTag
 
-`TriggerTag`는 `AbilityProcessor.TagContainer.NotifyTag(...)` 호출을 통해 실행되는 태그입니다.
+`TriggerTag`는 `AbilityProcessor.TagContainer.NotifyTag(...)` 호출을 통해 실행되는 태그입니다. 페이로드(`AbilityActivatePayload`)를 함께 전달하면 트리거 대상 어빌리티의 활성화 인자로 전달됩니다.
 
 예시:
 
 ```csharp
+// 1. 단순 트리거 실행
 processor.TagContainer.NotifyTag(new GameTag("Event.CounterWindow"));
+
+// 2. 페이로드와 함께 트리거 실행
+processor.TagContainer.NotifyTag(new GameTag("Event.AimTarget"), new AimPayload { TargetPoint = hitPoint });
 ```
 
-이 경우 해당 `TriggerTag`를 가진 어빌리티가 자동으로 실행됩니다.
+이 경우 해당 `TriggerTag`를 가진 어빌리티가 자동으로 실행되며, 전달된 페이로드는 어빌리티의 `OnActivate`로 함께 전달됩니다.
 
 ## ReactivationPolicy
 
