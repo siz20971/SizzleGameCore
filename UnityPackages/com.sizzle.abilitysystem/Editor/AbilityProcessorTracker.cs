@@ -1229,9 +1229,9 @@ namespace Sizzle.AbilitySystem.Editor
             AddHistoryEntry("Tag", $"{action}: {GetTagName(info.Tag)} (stack {info.Remains})");
         }
 
-        private void HandleTagNotified(GameTag tag)
+        private void HandleTagNotified(GameTag tag, object payload)
         {
-            AddHistoryEntry("Tag", $"Notify: {GetTagName(tag)}");
+            AddHistoryEntry("Tag", $"Notify: {GetTagName(tag)}{(payload != null ? $" (data: {payload})" : string.Empty)}");
         }
 
         private void HandleAbilityRegistered(Ability ability, AbilityRuntimeContext context)

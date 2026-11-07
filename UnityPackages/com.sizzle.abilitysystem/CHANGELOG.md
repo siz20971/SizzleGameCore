@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.14 - 2026-11-06
+### 버그 수정
+- **`OnTagNotified` 시그니처 갱신에 따른 컴파일 에러 수정**:
+  - `GameTagContainerUniTaskExtensions`: `WaitUntilTagNotifiedAsync` 내부 람다 핸들러 인자 불일치(CS1593) 수정.
+  - `AbilityProcessorTracker`: `HandleTagNotified` 핸들러 시그니처 불일치(CS0123) 수정 및 페이로드 데이터 로깅 지원.
+
 ## 0.1.13 - 2026-11-06
 ### 기능 개선 및 의존성 업데이트
 - **트리거 어빌리티 페이로드 연동 (`TriggerTag`)**:

@@ -83,7 +83,7 @@ namespace Sizzle.GameTagSystem
                 registration.Dispose();
             }
 
-            handler = notifiedTag =>
+            handler = (notifiedTag, _) =>
             {
                 if (!notifiedTag.Equals(tag))
                     return;
