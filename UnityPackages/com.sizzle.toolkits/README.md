@@ -526,6 +526,7 @@ public class CharacterTable : DataTable<string, CharacterData>
 
 * **에디터 도구**:
   - `ScreenTransitionManagerEditor`: 인스펙터 실시간 테스트 및 Abort 제어.
+  - `SimpleSpriteAnimationEditorUtility`: Project 창에서 다중 선택된 스프라이트/텍스처를 `SimpleSpriteAnimation` 오브젝트로 변환해 현재 씬 또는 프리팹 모드 루트 하위에 생성 (`Assets/Sizzle/Create Simple Sprite Animation`, `Tools/Sizzle/Toolkits/Create Simple Sprite Animation`).
 * **샘플 / 데모 씬**:
   - `Samples/UI/RecycledScrollViewDemoScene.unity` (5개 옵션별 재사용 스크롤뷰 및 버튼 이동 검증)
   - `Samples/Transitions/TransitionTestScene.unity` (17종 트랜지션 실시간 테스트)

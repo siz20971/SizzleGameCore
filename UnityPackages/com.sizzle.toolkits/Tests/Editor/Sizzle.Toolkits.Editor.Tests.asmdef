@@ -3,6 +3,7 @@
     "rootNamespace": "Sizzle.Toolkits.Tests",
     "references": [
         "Sizzle.Toolkits",
+        "Sizzle.Toolkits.Editor",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],
