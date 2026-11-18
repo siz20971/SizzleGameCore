@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.2.1 - 2026-11-18
+### 신규 기능 및 개선
+- **에디터 도구 (`Animations` 모듈)**:
+  - **`SimpleSpriteAnimationEditorUtility`**: Project 창에서 다중 선택된 `Sprite` 또는 `Texture2D`(단일/슬라이스) 에셋을 기반으로 `SpriteRenderer` 및 `SimpleSpriteAnimation`이 구성된 게임 오브젝트를 즉시 생성하는 에디터 메뉴 추가 (`Assets/Sizzle/Create Simple Sprite Animation`, `Tools/Sizzle/Toolkits/Create Simple Sprite Animation`).
+  - 자연 정렬(`CompareNatural`), 첫 번째 프레임 기반 오브젝트 이름 자동 추론(`ResolveDefaultObjectName`), 프리팹 모드(`PrefabStage`) 루트 및 현재 씬 스테이지 배치, `Undo` 지원.
+  - 에디터 단위 테스트 스위트 추가 (`Tests/Editor/SimpleSpriteAnimationEditorTests.cs`).
+- **시간 모드 확장 (`Input` 모듈)**:
+  - **`InputBufferTimeScaleMode`**: `InputBuffer<TKey>`의 선입력 유효 시간 만료 판정 기준을 `Unscaled`(`Time.unscaledTimeAsDouble`), `Scaled`(`Time.timeAsDouble`), `ManualTick`(`Tick(float deltaTime)` 수동 누적) 3가지 모드로 확장.
+  - `InputBuffer<TKey>.TimeScaleMode` 프로퍼티(모드 변경 시 기존 버퍼 초기화), `InputBufferTimeScaleMode` 인자 생성자 오버로드 및 `Tick(float deltaTime)` 수동 시간 진행 지원.
+
 ## 0.2.0 - 2026-11-05
 ### 신규 기능 및 개선 (Data 모듈)
 - **CSVParser**: RFC 4180 표준 규격(따옴표 이스케이프, 셀 내 개행, BOM 처리)을 준수하는 경량·고성능 CSV 파서 신규 구현.

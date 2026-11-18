@@ -229,12 +229,19 @@ string redText = "위험!".WithColor(Color.red).Bold();
 > **네임스페이스**: `Sizzle.Toolkits.Input`
 
 #### 1) `InputBuffer` (O(1) 고성능 선입력 버퍼)
-리스트 순회 비용 없이 딕셔너리와 타임스탬프를 활용해 $O(1)$로 선입력을 보관하고 즉시 소비합니다.
+리스트 순회 비용 없이 딕셔너리와 타임스탬프를 활용해 $O(1)$로 선입력을 보관하고 즉시 소비합니다.  
+`InputBufferTimeScaleMode`를 통해 `Unscaled`(타임스케일 무관, 기본값), `Scaled`(`Time.timeScale` 연동), `ManualTick`(`Tick(deltaTime)` 수동 시간 진행) 3가지 시간 판정 모드를 선택할 수 있습니다.
 ```csharp
-private InputBuffer m_inputBuffer = new(defaultBufferDuration: 0.25f);
+// 기본 모드(Unscaled) 또는 Scaled / ManualTick 모드 지정 가능
+private InputBuffer m_inputBuffer = new(
+    defaultBufferDuration: 0.25f,
+    timeScaleMode: InputBufferTimeScaleMode.Unscaled);
 
 private void Update()
 {
+    // ManualTick 모드 사용 시 외부에서 deltaTime 전달 (Unscaled/Scaled 모드에서는 무시됨)
+    // m_inputBuffer.Tick(Time.deltaTime);
+
     if (Input.GetKeyDown(KeyCode.Z)) m_inputBuffer.Buffer("Attack");
     if (Input.GetKeyDown(KeyCode.Space)) m_inputBuffer.Buffer("Dodge");
 
