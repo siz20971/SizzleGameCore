@@ -5,6 +5,21 @@ using UnityEngine;
 namespace Sizzle.Toolkits.Input
 {
     /// <summary>
+    /// <see cref="InputBuffer{TKey}"/>의 선입력 유효 시간 만료를 판정할 시간 기준입니다.
+    /// </summary>
+    public enum InputBufferTimeScaleMode
+    {
+        /// <summary>Time.unscaledTimeAsDouble 기준. 타임스케일(히트스탑/슬로우/일시정지)의 영향을 받지 않습니다.</summary>
+        Unscaled,
+
+        /// <summary>Time.timeAsDouble 기준. Time.timeScale의 변화(히트스탑/슬로우)에 연동되어 시간이 흐릅니다.</summary>
+        Scaled,
+
+        /// <summary>Tick(float deltaTime) 호출로 누적된 시간 기준. 외부에서 전달한 deltaTime으로 시간을 진행합니다.</summary>
+        ManualTick
+    }
+
+    /// <summary>
     /// <para>액션 및 격투 게임에서 공격/회피/점프 키 선입력(Input Buffering)을 처리하는 제네릭 고성능 입력 버퍼입니다.</para>
     /// <para>리스트 순회 및 삭제 오버헤드 없이, 액션별 최신 타임스탬프를 딕셔너리로 관리하여
     /// <b>O(1) 조회, O(1) 소비 및 Zero-Alloc</b>으로 극도로 가볍고 빠르게 동작합니다.</para>
@@ -14,12 +29,14 @@ namespace Sizzle.Toolkits.Input
     {
         private readonly struct BufferEntry
         {
-            public readonly float Timestamp;
+            public readonly bool IsValid;
+            public readonly double Timestamp;
             public readonly float CustomDuration;
             public readonly object CustomData;
 
-            public BufferEntry(float timestamp, float customDuration, object customData)
+            public BufferEntry(double timestamp, float customDuration, object customData)
             {
+                IsValid = true;
                 Timestamp = timestamp;
                 CustomDuration = customDuration;
                 CustomData = customData;
@@ -28,12 +45,28 @@ namespace Sizzle.Toolkits.Input
 
         private readonly Dictionary<TKey, BufferEntry> m_buffer;
         private float m_defaultBufferDuration;
+        private InputBufferTimeScaleMode m_timeScaleMode;
+        private double m_manualElapsedTime;
 
         /// <summary>기본 선입력 유지 유효 시간(초)입니다.</summary>
         public float DefaultBufferDuration
         {
             get => m_defaultBufferDuration;
             set => m_defaultBufferDuration = Mathf.Max(0.01f, value);
+        }
+
+        /// <summary>선입력 유효 시간 만료 판정에 사용할 시간 기준입니다. 변경 시 기존 버퍼는 초기화됩니다.</summary>
+        public InputBufferTimeScaleMode TimeScaleMode
+        {
+            get => m_timeScaleMode;
+            set
+            {
+                if (m_timeScaleMode != value)
+                {
+                    m_timeScaleMode = value;
+                    m_buffer.Clear();
+                }
+            }
         }
 
         /// <summary>현재 하나 이상의 유효한 선입력이 대기 중인지 여부입니다.</summary>
@@ -44,10 +77,10 @@ namespace Sizzle.Toolkits.Input
         {
             get
             {
-                float now = Time.unscaledTime;
+                double now = GetCurrentTime();
                 foreach (var kvp in m_buffer)
                 {
-                    if (now - kvp.Value.Timestamp <= kvp.Value.CustomDuration)
+                    if (IsEntryValid(kvp.Value, now))
                         return true;
                 }
                 return false;
@@ -55,14 +88,30 @@ namespace Sizzle.Toolkits.Input
         }
 
         /// <summary>
-        /// 지정된 기본 선입력 유지 시간으로 인스턴스를 생성합니다.
+        /// 지정된 기본 선입력 유지 시간과 시간 기준 모드로 인스턴스를 생성합니다.
         /// </summary>
         /// <param name="defaultBufferDuration">선입력 유지 시간(초, 기본 0.2초)</param>
         /// <param name="comparer">선택적 키 비교자</param>
-        public InputBuffer(float defaultBufferDuration = 0.2f, IEqualityComparer<TKey> comparer = null)
+        /// <param name="timeScaleMode">시간 기준 모드 (기본 Unscaled)</param>
+        public InputBuffer(
+            float defaultBufferDuration = 0.2f,
+            IEqualityComparer<TKey> comparer = null,
+            InputBufferTimeScaleMode timeScaleMode = InputBufferTimeScaleMode.Unscaled)
         {
             m_defaultBufferDuration = Mathf.Max(0.01f, defaultBufferDuration);
+            m_timeScaleMode = timeScaleMode;
             m_buffer = comparer != null ? new Dictionary<TKey, BufferEntry>(comparer) : new Dictionary<TKey, BufferEntry>();
+        }
+
+        /// <summary>
+        /// 지정된 기본 선입력 유지 시간과 시간 기준 모드로 인스턴스를 생성합니다.
+        /// </summary>
+        public InputBuffer(
+            float defaultBufferDuration,
+            InputBufferTimeScaleMode timeScaleMode,
+            IEqualityComparer<TKey> comparer = null)
+            : this(defaultBufferDuration, comparer, timeScaleMode)
+        {
         }
 
         /// <summary>
@@ -75,8 +124,8 @@ namespace Sizzle.Toolkits.Input
         {
             if (action == null) return;
 
-            float duration = customDuration ?? m_defaultBufferDuration;
-            m_buffer[action] = new BufferEntry(Time.unscaledTime, duration, customData);
+            float duration = Mathf.Max(0f, customDuration ?? m_defaultBufferDuration);
+            m_buffer[action] = new BufferEntry(GetCurrentTime(), duration, customData);
         }
 
         /// <summary>
@@ -97,15 +146,12 @@ namespace Sizzle.Toolkits.Input
             customData = null;
             if (action == null) return false;
 
-            if (m_buffer.TryGetValue(action, out var entry))
+            if (m_buffer.TryGetValue(action, out var entry) && IsEntryValid(entry, GetCurrentTime()))
             {
-                if (Time.unscaledTime - entry.Timestamp <= entry.CustomDuration)
-                {
-                    customData = entry.CustomData;
-                    // 만료 처리하여 재소비 방지 (제거하지 않고 타임스탬프만 무효화하여 딕셔너리 내부 재할당 방지)
-                    m_buffer[action] = new BufferEntry(-999f, 0f, null);
-                    return true;
-                }
+                customData = entry.CustomData;
+                // 무효화하여 재소비 방지 (제거하지 않고 엔트리만 무효화하여 딕셔너리 내부 재할당 방지)
+                m_buffer[action] = default;
+                return true;
             }
 
             return false;
@@ -120,7 +166,7 @@ namespace Sizzle.Toolkits.Input
 
             if (m_buffer.TryGetValue(action, out var entry))
             {
-                return Time.unscaledTime - entry.Timestamp <= entry.CustomDuration;
+                return IsEntryValid(entry, GetCurrentTime());
             }
 
             return false;
@@ -138,11 +184,11 @@ namespace Sizzle.Toolkits.Input
         {
             if (action == null) return 0f;
 
-            if (m_buffer.TryGetValue(action, out var entry))
+            if (m_buffer.TryGetValue(action, out var entry) && entry.IsValid)
             {
-                float elapsed = Time.unscaledTime - entry.Timestamp;
-                float remaining = entry.CustomDuration - elapsed;
-                return remaining > 0f ? remaining : 0f;
+                double elapsed = GetCurrentTime() - entry.Timestamp;
+                double remaining = entry.CustomDuration - elapsed;
+                return remaining > 0d ? (float)remaining : 0f;
             }
 
             return 0f;
@@ -155,7 +201,7 @@ namespace Sizzle.Toolkits.Input
         {
             if (action != null)
             {
-                m_buffer[action] = new BufferEntry(-999f, 0f, null);
+                m_buffer[action] = default;
             }
         }
 
@@ -173,9 +219,35 @@ namespace Sizzle.Toolkits.Input
         }
 
         /// <summary>
-        /// 기존 매 프레임 순회 방식과의 호환을 위한 빈 메서드입니다. 타임스탬프 기반 검사이므로 호출하지 않아도 무방합니다.
+        /// <see cref="InputBufferTimeScaleMode.ManualTick"/> 모드일 때 버퍼 내부 시간을 진행합니다.
+        /// <see cref="InputBufferTimeScaleMode.Unscaled"/> 및 <see cref="InputBufferTimeScaleMode.Scaled"/> 모드에서는 동작하지 않습니다.
         /// </summary>
-        public void Tick(float deltaTime) { }
+        public void Tick(float deltaTime)
+        {
+            if (m_timeScaleMode == InputBufferTimeScaleMode.ManualTick && deltaTime > 0f)
+            {
+                m_manualElapsedTime += deltaTime;
+            }
+        }
+
+        private double GetCurrentTime()
+        {
+            switch (m_timeScaleMode)
+            {
+                case InputBufferTimeScaleMode.Scaled:
+                    return Time.timeAsDouble;
+                case InputBufferTimeScaleMode.ManualTick:
+                    return m_manualElapsedTime;
+                case InputBufferTimeScaleMode.Unscaled:
+                default:
+                    return Time.unscaledTimeAsDouble;
+            }
+        }
+
+        private static bool IsEntryValid(in BufferEntry entry, double now)
+        {
+            return entry.IsValid && (now - entry.Timestamp <= entry.CustomDuration);
+        }
     }
 
     /// <summary>
@@ -183,8 +255,10 @@ namespace Sizzle.Toolkits.Input
     /// </summary>
     public class InputBuffer : InputBuffer<string>
     {
-        public InputBuffer(float defaultBufferDuration = 0.2f)
-            : base(defaultBufferDuration, StringComparer.OrdinalIgnoreCase)
+        public InputBuffer(
+            float defaultBufferDuration = 0.2f,
+            InputBufferTimeScaleMode timeScaleMode = InputBufferTimeScaleMode.Unscaled)
+            : base(defaultBufferDuration, StringComparer.OrdinalIgnoreCase, timeScaleMode)
         {
         }
     }
