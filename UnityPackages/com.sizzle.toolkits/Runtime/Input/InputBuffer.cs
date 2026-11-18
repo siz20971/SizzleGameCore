@@ -108,8 +108,18 @@ namespace Sizzle.Toolkits.Input
         /// </summary>
         public InputBuffer(
             float defaultBufferDuration,
+            InputBufferTimeScaleMode timeScaleMode)
+            : this(defaultBufferDuration, null, timeScaleMode)
+        {
+        }
+
+        /// <summary>
+        /// 지정된 기본 선입력 유지 시간과 시간 기준 모드로 인스턴스를 생성합니다.
+        /// </summary>
+        public InputBuffer(
+            float defaultBufferDuration,
             InputBufferTimeScaleMode timeScaleMode,
-            IEqualityComparer<TKey> comparer = null)
+            IEqualityComparer<TKey> comparer)
             : this(defaultBufferDuration, comparer, timeScaleMode)
         {
         }
