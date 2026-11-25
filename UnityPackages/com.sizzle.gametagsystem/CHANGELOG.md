@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.1.9 - 2026-11-25
+### 신규 기능
+- **`GameTagContainer.GetTagRemainingInfo(GameTag)` 추가**:
+  - 특정 태그의 보유 여부(`HasTag`), 시간 제한 없는 스택 존재 여부(`HasUntimed`), 활성 `TimedTag` 중 최장 남은 시간(`MaxRemaining`), 활성 `TimedTag` 수(`ActiveTimedCount`), 총 스택 수(`TotalStack`)를 GC 할당 없이 조회할 수 있는 `TagRemainingInfo` 구조체 기반 API 추가.
+- **`GameTagContainer.RemoveAllTags(GameTag)` 추가**:
+  - 특정 태그에 연결된 모든 활성 `TimedTag`를 일괄 취소하고 보유 스택을 한 번에 0으로 제거하며, 소유 변경 이벤트를 1회만 발행하도록 지원.
+- **`GameTagOwnshipChangeInfo.PreviousMaxRemaining` 추가**:
+  - 태그 소유 변경 직전의 해당 태그 최장 남은 시간을 함께 전달하여 다중 `TimedTag` 중첩 시 연장 여부를 정확히 판별할 수 있도록 지원.
+
+### 버그 수정 및 개선
+- **`AddTagTimed` 등록 순서 수정**:
+  - `TimedTagEntry`를 `m_timedTags`에 먼저 등록한 뒤 `AddTag` 이벤트를 발행하도록 수정하여, `OnTagOwnshipChanged` 콜백 시점에 새로 추가된 `TimedTag` 정보가 즉시 조회되도록 개선.
+  - `duration <= 0`인 경우 무효 호출로 무시하도록 가드 추가.
+- **`Tick` 만료 처리 재진입 안전성 개선**:
+  - 만료된 `TimedTagEntry`를 리스트에서 먼저 제거한 뒤 `RemoveTag` 이벤트를 발행하여, 콜백 도중 `AddTagTimed`가 재진입 호출되어도 목록이 손상되지 않도록 수정.
+- **`IList<TimedTagInfo> GetTimedTags()` `[Obsolete]` 처리**:
+  - 매 호출마다 새 `List<TimedTagInfo>`를 할당하여 런타임 GC를 유발하므로 Obsolete 처리하고, `GetTimedTags(List<TimedTagInfo>)` 또는 `GetTagRemainingInfo(GameTag)` 사용을 안내하도록 변경.
+
 ## 0.1.8 - 2026-11-06
 ### 변경 사항 (Breaking Change)
 - **TagContainer Notify 이벤트 단일화**:

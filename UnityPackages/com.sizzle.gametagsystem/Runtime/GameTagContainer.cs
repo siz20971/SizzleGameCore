@@ -31,6 +31,7 @@ namespace Sizzle.GameTagSystem
             public GameTag Tag;
             public bool Added;
             public int Remains;
+            public float PreviousMaxRemaining;
         }
 
         public delegate void GameTagOwnshipChangedHandler(GameTagOwnshipChangeInfo info);
@@ -98,6 +99,12 @@ namespace Sizzle.GameTagSystem
             if (tag.IsEmpty)
                 return;
 
+            float prevMaxRemaining = GetTagMaxRemainingInternal(tag);
+            AddTagInternal(tag, prevMaxRemaining);
+        }
+
+        private void AddTagInternal(GameTag tag, float previousMaxRemaining)
+        {
             m_ownTagCounts.TryGetValue(tag, out int count);
             m_ownTagCounts[tag] = count + 1;
 
@@ -107,7 +114,8 @@ namespace Sizzle.GameTagSystem
             {
                 Tag = tag,
                 Added = true,
-                Remains = m_ownTagCounts[tag]
+                Remains = m_ownTagCounts[tag],
+                PreviousMaxRemaining = previousMaxRemaining
             };
 
             OnTagOwnshipChanged?.Invoke(info);
@@ -120,10 +128,17 @@ namespace Sizzle.GameTagSystem
         /// </summary>
         public void RemoveTag(GameTag tag)
         {
-            if (tag.IsEmpty || !m_ownTagCounts.TryGetValue(tag, out int count))
-            {
+            if (tag.IsEmpty)
                 return;
-            }
+
+            float prevMaxRemaining = GetTagMaxRemainingInternal(tag);
+            RemoveTagInternal(tag, prevMaxRemaining);
+        }
+
+        private void RemoveTagInternal(GameTag tag, float previousMaxRemaining)
+        {
+            if (!m_ownTagCounts.TryGetValue(tag, out int count))
+                return;
 
             int remains = count - 1;
 
@@ -143,7 +158,47 @@ namespace Sizzle.GameTagSystem
             {
                 Tag = tag,
                 Added = false,
-                Remains = remains
+                Remains = remains,
+                PreviousMaxRemaining = previousMaxRemaining
+            };
+
+            OnTagOwnshipChanged?.Invoke(info);
+            NotifyOwnshipChangedListeners(info);
+        }
+
+        /// <summary>
+        /// 특정 태그의 모든 스택과 해당 태그에 연결된 모든 활성 TimedTag를 일괄 취소·제거합니다.
+        /// </summary>
+        public void RemoveAllTags(GameTag tag)
+        {
+            if (tag.IsEmpty)
+                return;
+
+            float prevMaxRemaining = GetTagMaxRemainingInternal(tag);
+
+            for (int i = m_timedTags.Count - 1; i >= 0; i--)
+            {
+                TimedTagEntry entry = m_timedTags[i];
+                if (entry != null && entry.Tag.IsExact(tag))
+                {
+                    entry.Cancelled = true;
+                    m_timedTags[i] = m_timedTags[m_timedTags.Count - 1];
+                    m_timedTags.RemoveAt(m_timedTags.Count - 1);
+                }
+            }
+
+            if (!m_ownTagCounts.TryGetValue(tag, out int count) || count <= 0)
+                return;
+
+            m_ownTagCounts.Remove(tag);
+            UpdateParentTagRefCounts(tag, -count);
+
+            GameTagOwnshipChangeInfo info = new GameTagOwnshipChangeInfo()
+            {
+                Tag = tag,
+                Added = false,
+                Remains = 0,
+                PreviousMaxRemaining = prevMaxRemaining
             };
 
             OnTagOwnshipChanged?.Invoke(info);
@@ -434,8 +489,9 @@ namespace Sizzle.GameTagSystem
             {
                 if (IsValid)
                 {
+                    float prevMaxRemaining = m_container.GetTagMaxRemainingInternal(m_entry.Tag);
                     m_entry.Cancelled = true;
-                    m_container.RemoveTag(m_entry.Tag);
+                    m_container.RemoveTagInternal(m_entry.Tag, prevMaxRemaining);
                 }
             }
         }
@@ -452,7 +508,79 @@ namespace Sizzle.GameTagSystem
             }
         }
 
+        public readonly struct TagRemainingInfo
+        {
+            public bool HasTag { get; }
+            public bool HasUntimed { get; }
+            public float MaxRemaining { get; }
+            public int ActiveTimedCount { get; }
+            public int TotalStack { get; }
+
+            public TagRemainingInfo(bool hasTag, bool hasUntimed, float maxRemaining, int activeTimedCount, int totalStack)
+            {
+                HasTag = hasTag;
+                HasUntimed = hasUntimed;
+                MaxRemaining = maxRemaining;
+                ActiveTimedCount = activeTimedCount;
+                TotalStack = totalStack;
+            }
+        }
+
         private List<TimedTagEntry> m_timedTags = new List<TimedTagEntry>();
+
+        /// <summary>
+        /// 특정 태그의 보유 여부, 시간 제한 없는 스택 존재 여부, 활성 TimedTag 중 최장 남은 시간을 GC 할당 없이 조회합니다.
+        /// </summary>
+        public TagRemainingInfo GetTagRemainingInfo(GameTag tag)
+        {
+            if (tag.IsEmpty)
+                return default;
+
+            int totalStack = GetTagStack(tag);
+            if (totalStack <= 0)
+                return default;
+
+            float maxRemaining = 0f;
+            int activeTimedCount = 0;
+
+            for (int i = 0; i < m_timedTags.Count; i++)
+            {
+                TimedTagEntry entry = m_timedTags[i];
+                if (entry == null || entry.Cancelled || !entry.Tag.IsExact(tag))
+                    continue;
+
+                activeTimedCount++;
+                if (entry.Remaining > maxRemaining)
+                    maxRemaining = entry.Remaining;
+            }
+
+            bool hasUntimed = totalStack > activeTimedCount;
+            return new TagRemainingInfo(
+                hasTag: true,
+                hasUntimed: hasUntimed,
+                maxRemaining: maxRemaining,
+                activeTimedCount: activeTimedCount,
+                totalStack: totalStack);
+        }
+
+        private float GetTagMaxRemainingInternal(GameTag tag)
+        {
+            if (m_timedTags.Count == 0 || tag.IsEmpty)
+                return 0f;
+
+            float maxRemaining = 0f;
+            for (int i = 0; i < m_timedTags.Count; i++)
+            {
+                TimedTagEntry entry = m_timedTags[i];
+                if (entry == null || entry.Cancelled || !entry.Tag.IsExact(tag))
+                    continue;
+
+                if (entry.Remaining > maxRemaining)
+                    maxRemaining = entry.Remaining;
+            }
+
+            return maxRemaining;
+        }
 
         public void GetTimedTags(List<TimedTagInfo> results)
         {
@@ -469,6 +597,7 @@ namespace Sizzle.GameTagSystem
             }
         }
 
+        [Obsolete("매 호출마다 새 List<TimedTagInfo>를 할당하여 런타임 GC를 유발합니다. 전체 목록 조회는 GetTimedTags(List<TimedTagInfo>)를, 특정 태그의 남은 시간 조회는 GetTagRemainingInfo(GameTag)를 사용하세요.")]
         public IList<TimedTagInfo> GetTimedTags()
         {
             List<TimedTagInfo> timedTags = new List<TimedTagInfo>(m_timedTags.Count);
@@ -484,12 +613,13 @@ namespace Sizzle.GameTagSystem
         /// <returns>조기 취소에 사용할 수 있는 핸들</returns>
         public TimedTagHandle AddTagTimed(GameTag tag, float duration)
         {
-            if (tag.IsEmpty)
+            if (tag.IsEmpty || duration <= 0f)
                 return default;
 
-            AddTag(tag);
+            float prevMaxRemaining = GetTagMaxRemainingInternal(tag);
             var entry = new TimedTagEntry(tag, duration);
             m_timedTags.Add(entry);
+            AddTagInternal(tag, prevMaxRemaining);
             return new TimedTagHandle(this, entry);
         }
 
@@ -515,12 +645,14 @@ namespace Sizzle.GameTagSystem
 
                 if (entry.Remaining <= 0f)
                 {
+                    float prevMaxRemaining = GetTagMaxRemainingInternal(entry.Tag);
                     entry.Cancelled = true;
-                    RemoveTag(entry.Tag);
-                    
-                    // [O(1) 삭제] 순서가 무관하므로 맨 마지막 원소와 교환 후 마지막 원소를 삭제(Swap-Back)하여 요소 이동 오버헤드 방지
+
+                    // [O(1) 삭제] 재진입(콜백 중 AddTagTimed 호출 등) 안전성을 위해 RemoveTag 호출 전 목록에서 제거
                     m_timedTags[i] = m_timedTags[m_timedTags.Count - 1];
                     m_timedTags.RemoveAt(m_timedTags.Count - 1);
+
+                    RemoveTagInternal(entry.Tag, prevMaxRemaining);
                 }
             }
         }
